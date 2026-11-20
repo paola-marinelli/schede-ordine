@@ -18,7 +18,8 @@ main{padding:12px;max-width:900px;margin:0 auto}
 .btn.rosso{background:var(--rosso);color:#fff;border-color:var(--rosso)}
 .btn.verde{background:var(--verde);color:#fff;border-color:var(--verde)}
 .btn.scuro{background:var(--blu);color:#fff;border-color:var(--blu)}
-.griglia{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.griglia{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}   /* negozi 4 e 4 (Paola 20/11/2026) */
+@media (max-width:520px){.griglia{grid-template-columns:repeat(2,1fr)}}
 .griglia .btn{padding:16px 10px;font-size:16px;text-align:center}
 .griglia .btn.tot{background:var(--blu);color:#fff;grid-column:1/-1}
 .riga{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
