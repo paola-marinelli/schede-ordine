@@ -85,7 +85,7 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:18px}
 <header><div class="logo"><b>Hol</b><i>dem</i></div><h1 id="tit">Ordini fornitori locali<small id="sub">Scegli il negozio</small></h1></header>
 <main id="m"><noscript>Per usare l'app apri il link nel browser del telefono (Chrome o Safari).</noscript></main>
 <div class="toast" id="toast" hidden></div>
-<footer>Creato dal Business Controller · dati del 20/11/2026 16:37 · versione 21/11 12:45</footer>
+<footer>Creato dal Business Controller · dati del 20/11/2026 16:37 · versione 21/11 13:05</footer>
 <script>/** @license
  *
  * jsPDF - PDF Document creation from JavaScript
@@ -518,6 +518,7 @@ function disegna(){
   var h=location.hash.slice(1).split('/');
   S.data=S.data||oggi();
   if(h[0]==='f'&&h[1]!=null){S.pdv=h[1]==='T'?'T':+h[1];S.data=h[2]||S.data;S.forn=decodeURIComponent(h[3]||'');stato();return fornitore()}
+  if((h[0]==='p'||h[0]==='f')&&soloMio()&&String(h[1])!==String(idxPdv(MIO()))){location.replace('#o');return}
   if(h[0]==='p'&&h[1]!=null){S.pdv=h[1]==='T'?'T':+h[1];if(h[2])S.data=h[2];stato();return elenco()}
   if(h[0]==='o') return negozi();
   if(h[0]==='c'&&h[1]) return dettaglio(decodeURIComponent(h[1]));
@@ -527,11 +528,16 @@ function disegna(){
 /* pagina iniziale: due usi dell'app (Paola 21/11/2026) */
 function home(){
   $('sub').textContent='Scegli cosa fare';
-  var n=SC().filter(function(o){return !o.conf}).length;
+  var n=SC().filter(function(o){return !o.conf&&(!soloMio()||o.pdv===MIO())}).length;
   $('m').innerHTML='<div class="tiles"><button class="tile ord" onclick="vai(\'o\')">ORDINI<small>compila, salva e invia la foto al fornitore</small></button>'
-   +'<button class="tile sca" onclick="vai(\'c\')">CONTROLLO SCARICO MERCI<small>'+(n?n+(n===1?' ordine da controllare':' ordini da controllare'):'ordini salvati, rettifiche e conferma')+'</small></button></div>';
+   +'<button class="tile sca" onclick="vai(\'c\')">CONTROLLO SCARICO MERCI<small>'+(n?n+(n===1?' ordine da controllare':' ordini da controllare'):'ordini salvati, rettifiche e conferma')+'</small></button></div>'
+   +(API?'<p style="text-align:center;margin-top:18px">'+(MIO()?'<b>'+(MIO()==='*'?'UFFICIO · tutti i negozi':esc(MIO()))+'</b><br>':'')+'<span id="rete" class="sub"></span><br><button class="btn" style="margin-top:8px;font-size:13px;padding:7px 12px" onclick="chiediCodice()">'+(CODICE()?'Cambia codice negozio':'Inserisci codice negozio')+'</button></p>':'');
+  if(soloMio()) $('sub').textContent=MIO();
+  if(API&&!CODICE()) setTimeout(chiediCodice,300);
+  statoRete(); if(API&&CODICE()&&!home.sync){home.sync=true;scaricaArchivio(function(){if(!location.hash||location.hash==='#')home()})}
 }
 function negozi(){
+  if(soloMio()&&idxPdv(MIO())>=0){location.replace('#p/'+idxPdv(MIO()));return}
   $('sub').textContent='Ordini · scegli il negozio';
   var t='<div class="riga"><button class="btn" onclick="vai(\'\')">← Home</button><h2 style="flex:1">Scegli il negozio</h2></div><div class="griglia">';
   DATI.pdv.forEach(function(p,i){t+='<button class="btn" onclick="vai(\'p/'+i+'\')">'+esc(p.n)+'</button>'});
@@ -541,7 +547,7 @@ function negozi(){
 function fornDi(){return S.pdv==='T'?Object.keys(DATI.forn).sort(function(a,b){return DATI.forn[a].n.localeCompare(DATI.forn[b].n)}):DATI.pdv[S.pdv].f}
 function elenco(){
   $('sub').textContent=nomePdv();
-  var t='<div class="riga"><button class="btn" onclick="vai(\'o\')">← Negozi</button><h2 style="flex:1">'+esc(nomePdv())+'</h2></div>'
+  var t='<div class="riga"><button class="btn" onclick="vai(soloMio()?\'\':\'o\')">'+(soloMio()?'← Home':'← Negozi')+'</button><h2 style="flex:1">'+esc(nomePdv())+'</h2></div>'
    +'<div class="riga"><label class="data" for="dt">Ordine del</label><input type="date" id="dt" value="'+S.data+'"><span class="sub" id="gg">'+giorno(S.data)+'</span></div>'
    +'<div class="riga"><input type="search" id="cerca" placeholder="Cerca fornitore"></div><div id="lista"></div>';
   $('m').innerHTML=t;
@@ -659,8 +665,61 @@ function inviaFoto(){
    con le righe ordinate, la colonna RETTIFICA, numero documento, chi controlla e data di conferma. */
 function SC(){try{return JSON.parse(localStorage.getItem('so_scarichi')||'[]')}catch(e){return MEM.so_scarichi||[]}}
 function SCsv(l){MEM.so_scarichi=l;try{localStorage.setItem('so_scarichi',JSON.stringify(l))}catch(e){toast('Memoria del telefono piena: elimina qualche ordine vecchio.')}}
+/* ---- archivio comune: foglio Google "ORDINI E SCARICHI" (Apps Script). API vuota = solo memoria del telefono ----
+   Ogni modifica aggiorna 'mod' e va in coda (so_coda); la coda si invia appena c'e' rete. All'apertura di Controllo
+   scarico l'app rilegge l'archivio e tiene la versione piu' recente di ogni ordine. */
+var API='';
+function CODICE(){try{return localStorage.getItem('so_codice')||''}catch(e){return MEM.so_codice||''}}
+function CODA(){try{return JSON.parse(localStorage.getItem('so_coda')||'[]')}catch(e){return MEM.so_coda||[]}}
+function MIO(){try{return localStorage.getItem('so_mio')||''}catch(e){return MEM.so_mio||''}}   /* negozio del codice, '*' = ufficio */
+function MIOsv(p){MEM.so_mio=p;try{localStorage.setItem('so_mio',p)}catch(e){}}
+function idxPdv(n){for(var i=0;i<DATI.pdv.length;i++) if(DATI.pdv[i].n===n) return i; return -1}
+function soloMio(){return API&&MIO()&&MIO()!=='*'}
+function CODAsv(c){MEM.so_coda=c;try{localStorage.setItem('so_coda',JSON.stringify(c))}catch(e){}}
+function ora(){return new Date().toISOString()}
+function apiGet(q){return fetch(API+'?'+q+'&codice='+encodeURIComponent(CODICE()),{cache:'no-store'}).then(function(r){return r.json()})}
+function apiPost(b){b.codice=CODICE();return fetch(API,{method:'POST',body:JSON.stringify(b),headers:{'Content-Type':'text/plain;charset=utf-8'}}).then(function(r){return r.json()})}
+function accoda(id){if(!API)return;var c=CODA();if(c.indexOf(id)<0)c.push(id);CODAsv(c);clearTimeout(accoda.t);accoda.t=setTimeout(invia,1200);statoRete()}
+function invia(){
+  if(!API||!CODICE()||invia.go)return; var c=CODA(); if(!c.length){statoRete();return}
+  var l=SC(),ord=[],del=[];
+  c.forEach(function(id){if(id.indexOf('DEL:')===0)del.push(id.slice(4));else{var o=l.filter(function(x){return x.id===id})[0];if(o)ord.push(o)}});
+  invia.go=true;
+  (ord.length?apiPost({azione:'salva',ordini:ord}):Promise.resolve({ok:true})).then(function(r){
+    if(!r||!r.ok) throw r;
+    return Promise.all(del.map(function(id){return apiPost({azione:'elimina',id:id})}));
+  }).then(function(){
+    var L=SC(); L.forEach(function(o){if(c.indexOf(o.id)>=0)o.sync=true}); SCsv(L);
+    CODAsv(CODA().filter(function(x){return c.indexOf(x)<0})); invia.go=false; statoRete(); if(CODA().length) invia();
+  }).catch(function(r){invia.go=false;statoRete(r&&r.errore==='codice'?'codice':'rete')});
+}
+function scaricaArchivio(cb){
+  if(!API||!CODICE()) return cb&&cb();
+  apiGet('azione=lista&pdv=*').then(function(r){
+    if(!r||!r.ok){statoRete(r&&r.errore==='codice'?'codice':'rete');return cb&&cb()}
+    if(r.pdv) MIOsv(r.pdv);
+    var pend=CODA(), srv={}, L={}; r.ordini.forEach(function(o){o.sync=true;srv[o.id]=o});
+    SC().forEach(function(o){
+      if(srv[o.id]){ if((o.mod||'')>(srv[o.id].mod||'')) L[o.id]=o; }
+      else if((!o.sync||pend.indexOf(o.id)>=0)&&(r.pdv==='*'||o.pdv===r.pdv)) L[o.id]=o;      /* nuovo, non ancora inviato */
+      /* gia' inviato e non piu' in archivio = eliminato da un altro telefono */ });
+    Object.keys(srv).forEach(function(k){if(!L[k]&&pend.indexOf('DEL:'+k)<0)L[k]=srv[k]});
+    SCsv(Object.keys(L).map(function(k){return L[k]})); statoRete(); invia(); cb&&cb();
+  }).catch(function(){statoRete('rete');cb&&cb()});
+}
+function statoRete(err){
+  var x=$('rete'); if(!x||!API) return; var n=CODA().length;
+  x.className='sub'; x.textContent=err==='codice'?'⚠ Codice negozio non valido: toccalo per cambiarlo':(err==='rete'||(!navigator.onLine&&n))?'⚠ Senza rete: '+n+' modifiche verranno inviate appena torna internet':n?'Invio di '+n+' modifiche…':'✓ Archivio comune aggiornato';
+  x.onclick=err==='codice'?function(){chiediCodice()}:null;
+}
+function chiediCodice(){
+  var c=prompt('Codice del negozio (te lo dà l\'ufficio):',CODICE()); if(c==null) return;
+  c=c.trim(); try{localStorage.setItem('so_codice',c)}catch(e){MEM.so_codice=c}
+  apiGet('azione=ping').then(function(r){if(r&&r.ok){MIOsv(r.pdv);toast(r.pdv==='*'?'Codice ufficio: vedi tutti i negozi.':'Codice di '+r.pdv+': archivio collegato.');invia();home.sync=false;vai('')}else toast('Codice non valido.')}).catch(function(){toast('Senza rete: il codice verrà controllato più tardi.')});
+}
+window.addEventListener('online',function(){invia()});
 function salvaOrdine(){
-  var f=DATI.forn[S.forn],v=ld(chiave()),l=SC(),nuovi=0,agg=0;
+  var f=DATI.forn[S.forn],v=ld(chiave()),l=SC(),nuovi=0,agg=0,ids=[];
   var pdvs=S.pdv==='T'?DATI.pdv.map(function(p,j){return j}):[S.pdv];
   pdvs.forEach(function(j){
     var righe=[];
@@ -668,20 +727,22 @@ function salvaOrdine(){
       if(o||r) righe.push({c:a[0],cf:a[1],plu:a[2],d:a[3],rep:a[4],o:o||'',r:r||'',ret:''})});
     if(!righe.length) return;
     var pn=DATI.pdv[j].n, ex=l.filter(function(x){return x.pdv===pn&&x.data===S.data&&x.forn===S.forn&&!x.conf})[0];
-    if(ex){var vec={};ex.righe.forEach(function(x){vec[x.c]=x.ret});righe.forEach(function(x){x.ret=vec[x.c]||''});ex.righe=righe;ex.salvato=new Date().toISOString();agg++}
-    else{l.push({id:String(Date.now())+'-'+j,pdv:pn,data:S.data,forn:S.forn,fn:f.n,righe:righe,salvato:new Date().toISOString(),doc:'',ctrl:'',conf:''});nuovi++}
+    if(ex){var vec={};ex.righe.forEach(function(x){vec[x.c]=x.ret});righe.forEach(function(x){x.ret=vec[x.c]||''});ex.righe=righe;ex.salvato=ora();ex.mod=ora();ids.push(ex.id);agg++}
+    else{var nid=String(Date.now())+'-'+j+'-'+Math.random().toString(36).slice(2,6);l.push({id:nid,pdv:pn,data:S.data,forn:S.forn,fn:f.n,righe:righe,salvato:ora(),mod:ora(),doc:'',ctrl:'',conf:''});ids.push(nid);nuovi++}
   });
   if(!nuovi&&!agg) return toast('Nessuna quantità inserita.');
-  SCsv(l); toast(agg&&!nuovi?'Ordine aggiornato in Controllo scarico merci.':'Ordine salvato in Controllo scarico merci.');
+  SCsv(l); ids.forEach(accoda); toast(agg&&!nuovi?'Ordine aggiornato in Controllo scarico merci.':'Ordine salvato in Controllo scarico merci.');
 }
 var CF={pdv:'*'};
 function controllo(){
   $('sub').textContent='Controllo scarico merci';
-  var l=SC(), pdvs={}; l.forEach(function(o){pdvs[o.pdv]=1});
+  var l=SC().filter(function(o){return !soloMio()||o.pdv===MIO()}), pdvs={}; l.forEach(function(o){pdvs[o.pdv]=1});
   if(CF.pdv!=='*'&&!pdvs[CF.pdv]) CF.pdv='*';
   var d=new Date(), da=CF.da||(d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-01'), al=CF.al||oggi();
-  var t='<div class="riga"><button class="btn" onclick="vai(\'\')">← Home</button><h2 style="flex:1">Controllo scarico merci</h2></div>';
-  if(!l.length){$('m').innerHTML=t+'<p class="sub">Nessun ordine salvato. Negli ORDINI compila il fornitore e premi <b>Salva</b>.</p>';return}
+  var t='<div class="riga"><button class="btn" onclick="vai(\'\')">← Home</button><h2 style="flex:1">Controllo scarico merci</h2></div>'
+   +(API?'<div class="riga"><span id="rete" class="sub"></span></div>':'');
+  if(!controllo.sync&&API&&CODICE()){controllo.sync=true;scaricaArchivio(function(){if(location.hash==='#c')controllo();controllo.sync=false})}
+  if(!l.length){$('m').innerHTML=t+'<p class="sub">Nessun ordine salvato. Negli ORDINI compila il fornitore e premi <b>Salva</b>.</p>';statoRete();return}
   var ps=Object.keys(pdvs).sort();
   if(ps.length>1) t+='<div class="filtri riga">'+['*'].concat(ps).map(function(p){return '<button data-p="'+esc(p)+'" aria-pressed="'+(CF.pdv===p)+'">'+(p==='*'?'Tutti':esc(p))+'</button>'}).join('')+'</div>';
   l=l.filter(function(o){return CF.pdv==='*'||o.pdv===CF.pdv}).sort(function(a,b){return a.data<b.data?1:a.data>b.data?-1:(a.salvato<b.salvato?1:-1)});
@@ -690,7 +751,7 @@ function controllo(){
       +(o.conf?'<span class="stato ok">SCARICATO<br>doc. '+esc(o.doc)+'</span>':'<span class="stato da">DA CONTROLLARE</span>')+'</button>'});
   t+='<div class="conf"><b>PDF degli scarichi confermati</b><div class="riga"><label class="data" for="pda">Dal</label><input type="date" id="pda" value="'+da+'"><label class="data" for="pal">al</label><input type="date" id="pal" value="'+al+'"></div>'
    +'<button class="btn scuro" id="pdf" style="width:100%">Crea PDF</button></div>';
-  $('m').innerHTML=t;
+  $('m').innerHTML=t; statoRete();
   $('m').querySelectorAll('.filtri button').forEach(function(b){b.onclick=function(){CF.pdv=b.dataset.p;controllo()}});
   $('pda').onchange=function(){CF.da=this.value}; $('pal').onchange=function(){CF.al=this.value};
   $('pdf').onclick=function(){pdfScarichi($('pda').value,$('pal').value)};
@@ -715,22 +776,22 @@ function dettaglio(id){
      +'<div class="barra" style="position:static;border:0"><button class="btn" id="riapri">Riapri per correggere</button></div>';
   }
   $('m').innerHTML=t; window.scrollTo(0,0);
-  $('m').querySelectorAll('input[data-i]').forEach(function(inp){inp.oninput=function(){var L=SC(),O=L.filter(function(x){return x.id===id})[0];O.righe[+inp.dataset.i].ret=inp.value.trim().replace('.',',');SCsv(L)}});
+  $('m').querySelectorAll('input[data-i]').forEach(function(inp){inp.oninput=function(){var L=SC(),O=L.filter(function(x){return x.id===id})[0];O.righe[+inp.dataset.i].ret=inp.value.trim().replace('.',',');O.mod=ora();SCsv(L);accoda(id)}});
   if(!bloc){
-    var salvaCampi=function(){var L=SC(),O=L.filter(function(x){return x.id===id})[0];O.doc=$('ndoc').value.trim();O.ctrl=$('ctrl').value.trim();SCsv(L)};
+    var salvaCampi=function(){var L=SC(),O=L.filter(function(x){return x.id===id})[0];O.doc=$('ndoc').value.trim();O.ctrl=$('ctrl').value.trim();O.mod=ora();SCsv(L);accoda(id)};
     $('ndoc').oninput=salvaCampi; $('ctrl').oninput=salvaCampi;
     $('confs').onclick=function(){salvaCampi();var L=SC(),O=L.filter(function(x){return x.id===id})[0];
       if(!O.doc) return toast('Scrivi il numero del documento.'); if(!O.ctrl) return toast('Scrivi chi controlla lo scarico.');
-      O.conf=new Date().toISOString(); SCsv(L); try{localStorage.setItem('so_ctrl',O.ctrl)}catch(e){} toast('Scarico confermato.'); dettaglio(id)};
-    $('elim').onclick=function(){if(confirm('Eliminare questo ordine da Controllo scarico merci?')){SCsv(SC().filter(function(x){return x.id!==id}));vai('c')}};
+      O.conf=ora(); O.mod=ora(); SCsv(L); accoda(id); try{localStorage.setItem('so_ctrl',O.ctrl)}catch(e){} toast('Scarico confermato.'); dettaglio(id)};
+    $('elim').onclick=function(){if(confirm('Eliminare questo ordine da Controllo scarico merci?')){SCsv(SC().filter(function(x){return x.id!==id}));CODAsv(CODA().filter(function(x){return x!==id}));accoda('DEL:'+id);vai('c')}};
   }else{
-    $('riapri').onclick=function(){if(confirm('Riaprire lo scarico per correggerlo?')){var L=SC(),O=L.filter(function(x){return x.id===id})[0];O.conf='';SCsv(L);dettaglio(id)}};
+    $('riapri').onclick=function(){if(confirm('Riaprire lo scarico per correggerlo?')){var L=SC(),O=L.filter(function(x){return x.id===id})[0];O.conf='';O.mod=ora();SCsv(L);accoda(id);dettaglio(id)}};
   }
 }
 /* PDF tabella: numero documento, fornitore, data, controllato da (+ negozio e rettifiche) */
 function pdfScarichi(da,al){
   if(!window.jspdf) return toast('Generatore PDF non caricato: chiudi e riapri l\'app.');
-  var l=SC().filter(function(o){return o.conf&&(CF.pdv==='*'||o.pdv===CF.pdv)&&(!da||o.data>=da)&&(!al||o.data<=al)})
+  var l=SC().filter(function(o){return o.conf&&(!soloMio()||o.pdv===MIO())&&(CF.pdv==='*'||o.pdv===CF.pdv)&&(!da||o.data>=da)&&(!al||o.data<=al)})
     .sort(function(a,b){return a.data<b.data?-1:a.data>b.data?1:0});
   if(!l.length) return toast('Nessuno scarico confermato nel periodo.');
   var doc=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -764,6 +825,6 @@ function testo(){
   if(r.length) t+='\n\n*RESO*\n'+r.join('\n');
   return t+'\n\nGrazie';
 }
-disegna();
+disegna(); invia();
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
 </script></body></html>
