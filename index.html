@@ -85,7 +85,7 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:18px}
 <header><div class="logo"><b>Hol</b><i>dem</i></div><h1 id="tit">Ordini fornitori locali<small id="sub">Scegli il negozio</small></h1></header>
 <main id="m"><noscript>Per usare l'app apri il link nel browser del telefono (Chrome o Safari).</noscript></main>
 <div class="toast" id="toast" hidden></div>
-<footer>Creato dal Business Controller · dati del 20/11/2026 16:37 · versione 21/11 13:05</footer>
+<footer>Creato dal Business Controller · dati del 20/11/2026 16:37 · versione 23/11 14:41</footer>
 <script>/** @license
  *
  * jsPDF - PDF Document creation from JavaScript
@@ -668,7 +668,7 @@ function SCsv(l){MEM.so_scarichi=l;try{localStorage.setItem('so_scarichi',JSON.s
 /* ---- archivio comune: foglio Google "ORDINI E SCARICHI" (Apps Script). API vuota = solo memoria del telefono ----
    Ogni modifica aggiorna 'mod' e va in coda (so_coda); la coda si invia appena c'e' rete. All'apertura di Controllo
    scarico l'app rilegge l'archivio e tiene la versione piu' recente di ogni ordine. */
-var API='';
+var API='https://archivio-ordini.holdem-ordini.workers.dev/';
 function CODICE(){try{return localStorage.getItem('so_codice')||''}catch(e){return MEM.so_codice||''}}
 function CODA(){try{return JSON.parse(localStorage.getItem('so_coda')||'[]')}catch(e){return MEM.so_coda||[]}}
 function MIO(){try{return localStorage.getItem('so_mio')||''}catch(e){return MEM.so_mio||''}}   /* negozio del codice, '*' = ufficio */
