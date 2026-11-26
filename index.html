@@ -45,8 +45,8 @@ h2{font-size:18px;margin:6px 0}
 .rep.GASTRO{background:var(--gas-bg);border:1px solid var(--gas)}.rep.PANE{background:var(--pane-bg);border:1px solid var(--pane)}.rep.PLS{background:var(--pls-bg);border:1px solid var(--pls)}
 .art{border-left:6px solid var(--linea)}.art.GASTRO{border-left-color:var(--gas)}.art.PANE{border-left-color:var(--pane)}.art.PLS{border-left-color:var(--pls)}
 .q{display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--muted);gap:2px}
-.q input{width:58px;font-size:17px;padding:7px 4px;text-align:center;border:1px solid var(--linea);border-radius:8px}
-.q.o input{background:var(--ord)}.q.r input{background:var(--reso)}
+.q input{width:52px;font-size:17px;padding:7px 4px;text-align:center;border:1px solid var(--linea);border-radius:8px}
+.q.g input{background:#ededed}.q.o input{background:var(--ord)}.q.r input{background:var(--reso)}
 .q input:not(:placeholder-shown){font-weight:700;border-color:#b45309}
 .barra{position:sticky;bottom:0;background:var(--sfondo);padding:10px 0;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--linea)}
 .barra .btn{flex:1;min-width:130px}
@@ -92,7 +92,7 @@ textarea.note{width:100%;min-height:70px;font:inherit;font-size:15px;padding:9px
 <header><div class="logo"><b>Hol</b><i>dem</i></div><h1 id="tit">Ordini fornitori locali<small id="sub">Scegli il negozio</small></h1></header>
 <main id="m"><noscript>Per usare l'app apri il link nel browser del telefono (Chrome o Safari).</noscript></main>
 <div class="toast" id="toast" hidden></div>
-<footer>Creato dal Business Controller · dati del 24/11/2026 19:21 · versione 26/11 12:36</footer>
+<footer>Creato dal Business Controller · dati del 24/11/2026 19:21 · versione 26/11 12:41</footer>
 <script>/** @license
  *
  * jsPDF - PDF Document creation from JavaScript
@@ -587,6 +587,7 @@ function fornitore(){
   if(!tot){
     f.a.forEach(function(a,i){ if(S.rep!=='*'&&a[4]!==S.rep) return;
       t+='<div class="art '+a[4]+'"><div class="d"><b>'+esc(a[3])+'</b><span>'+esc(a[0])+(a[1]?' · forn. '+esc(a[1]):'')+(a[2]?' · '+(a[2].length>=8?'EAN ':'PLU ')+esc(a[2]):'')+'</span><span class="rep '+a[4]+'">'+a[4]+'</span></div>'
+       +'<div class="q g">GIACENZA<input inputmode="decimal" placeholder=" " data-k="'+i+'|g" value="'+esc(v[i+'|g']||'')+'"></div>'
        +'<div class="q o">ORD<input inputmode="decimal" placeholder=" " data-k="'+i+'|o" value="'+esc(v[i+'|o']||'')+'"></div>'
        +'<div class="q r">RESO<input inputmode="decimal" placeholder=" " data-k="'+i+'|r" value="'+esc(v[i+'|r']||'')+'"></div></div>'});
   }else{
@@ -737,7 +738,8 @@ function salvaOrdine(){
   pdvs.forEach(function(j){
     var righe=[];
     f.a.forEach(function(a,i){var o=S.pdv==='T'?v[i+'|'+j+'|o']:v[i+'|o'], r=S.pdv==='T'?v[i+'|'+j+'|r']:v[i+'|r'];
-      if(o||r) righe.push({c:a[0],cf:a[1],plu:a[2],d:a[3],rep:a[4],o:o||'',r:r||'',ret:''})});
+      var g=S.pdv==='T'?'':v[i+'|g'];
+      if(o||r) righe.push({c:a[0],cf:a[1],plu:a[2],d:a[3],rep:a[4],g:g||'',o:o||'',r:r||'',ret:''})});
     if(!righe.length) return;
     var pn=DATI.pdv[j].n, ex=l.filter(function(x){return x.pdv===pn&&x.data===S.data&&x.forn===S.forn&&!x.conf})[0];
     if(ex){var vec={};ex.righe.forEach(function(x){vec[x.c]=x.ret});righe.forEach(function(x){x.ret=vec[x.c]||''});ex.righe=righe;ex.salvato=ora();ex.mod=ora();ids.push(ex.id);agg++}
@@ -813,7 +815,7 @@ function dettaglio(id){
    +'<p class="sub">In <b>RETTIFICA</b> scrivi la differenza scaricata rispetto all\'ordine (es. -2 se mancano 2 pezzi, +1 se ne arriva uno in più).</p>';
   o.righe.forEach(function(x,i){
     t+='<div class="art '+x.rep+'"><div class="d"><b>'+esc(x.d)+'</b><span>'+esc(x.c)+(x.cf?' · forn. '+esc(x.cf):'')+(x.plu?' · '+(x.plu.length>=8?'EAN ':'PLU ')+esc(x.plu):'')+'</span><span class="rep '+x.rep+'">'+x.rep+'</span></div>'
-     +'<div class="q o">ORD<input value="'+esc(x.o)+'" disabled></div><div class="q r">RESO<input value="'+esc(x.r)+'" disabled></div>'
+     +(x.g?'<div class="q g">GIAC.<input value="'+esc(x.g)+'" disabled></div>':'')+'<div class="q o">ORD<input value="'+esc(x.o)+'" disabled></div><div class="q r">RESO<input value="'+esc(x.r)+'" disabled></div>'
      +'<div class="q t">RETTIFICA<input inputmode="text" placeholder=" " data-i="'+i+'" value="'+esc(x.ret||'')+'"'+(bloc?' disabled':'')+'></div></div>'});
   t+='<div class="conf"><label for="nota">Note / anomalie del fornitore</label><textarea class="note" id="nota" placeholder="Es. merce arrivata in ritardo, prodotto danneggiato, bolla diversa dall\'ordine…"'+(bloc?' disabled':'')+'>'+esc(o.note||'')+'</textarea></div>';
   if(!bloc){
