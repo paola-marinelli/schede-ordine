@@ -1,0 +1,994 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"></head><body>
+<title>Tabulato Fornitori Locali</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=Archivo+Narrow:wght@400;600&display=swap">
+<style>
+/* Layout: banco ordini. Testata blu notte, due schede (Calendario / Elenco fornitori), calendario settimanale con ordini in rosso e scarichi in blu */
+:root{
+  --bg:#eef1f6; --carta:#ffffff; --ink:#18202e; --muted:#5b6577; --linea:#d4dae5;
+  --blu:#1d3557; --blu-ink:#ffffff; --fascia:#dde5f2; --reso:#fbe6d8; --reso-head:#8a3b12;
+  --ok:#1f9d55; --evid:#fff1b8; --evid-bordo:#b7791f; --rosso:#b42318; --rosso-bg:#fde8e7;
+  --scarico:#1d5fd1; --scarico-bg:#e3ecff; --ordine:#c8251b; --ordine-bg:#fde4e2; --oggi:#f4c430; --chip-ink:#ffffff;
+  --pls:#2b6fe0; --pls-bg:#dfeaff; --gas:#d9a400; --gas-bg:#fff4c7; --pane:#d9488f; --pane-bg:#fde1ee; --rep-ink:#18202e;
+  --f-ui:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-tab:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141c; --carta:#171e29; --ink:#e7ebf2; --muted:#9aa5b8; --linea:#2b3546;
+  --blu:#25426b; --blu-ink:#ffffff; --fascia:#1f2a3a; --reso:#3a2418; --reso-head:#a2522a;
+  --ok:#2fb36a; --evid:#4a3d12; --evid-bordo:#d8a23a; --rosso:#f2867d; --rosso-bg:#3b1a18;
+  --scarico:#7aa7ff; --scarico-bg:#16264a; --ordine:#ff8a80; --ordine-bg:#3d1a18; --oggi:#d8a23a; --chip-ink:#0f141c;
+  --pls:#6fa0ff; --pls-bg:#18294a; --gas:#f0c23a; --gas-bg:#3a3110; --pane:#f07ab3; --pane-bg:#3d1a2b; --rep-ink:#0f141c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141c; --carta:#171e29; --ink:#e7ebf2; --muted:#9aa5b8; --linea:#2b3546;
+  --blu:#25426b; --blu-ink:#ffffff; --fascia:#1f2a3a; --reso:#3a2418; --reso-head:#a2522a;
+  --ok:#2fb36a; --evid:#4a3d12; --evid-bordo:#d8a23a; --rosso:#f2867d; --rosso-bg:#3b1a18;
+  --scarico:#7aa7ff; --scarico-bg:#16264a; --ordine:#ff8a80; --ordine-bg:#3d1a18; --oggi:#d8a23a; --chip-ink:#0f141c;
+  --pls:#6fa0ff; --pls-bg:#18294a; --gas:#f0c23a; --gas-bg:#3a3110; --pane:#f07ab3; --pane-bg:#3d1a2b; --rep-ink:#0f141c; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--blu)}
+.gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{background:var(--blu);color:var(--blu-ink)}
+header.top .in{padding-block:12px;display:grid;gap:8px}
+header.top h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.02em;text-wrap:balance}
+header.top .sub{font-size:12px;opacity:.85;overflow-wrap:anywhere}
+.riga{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.riga label.dal{font-size:13px;display:flex;gap:6px;align-items:center}
+input[type=date],input[type=search],select{padding:8px;border-radius:8px;border:1px solid var(--linea);font:inherit;font-size:14px;background:var(--carta);color:var(--ink);min-width:0}
+header.top input{border-color:transparent}
+.btn{appearance:none;border:1px solid var(--linea);background:var(--carta);color:var(--ink);border-radius:8px;padding:8px 11px;font:600 14px var(--f-ui);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,button:focus-visible{outline:3px solid var(--evid-bordo);outline-offset:2px}
+.btn.verde{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.rosso{background:var(--rosso-bg);color:var(--rosso);border-color:transparent}
+header.top .btn{border-color:transparent}
+.toast{z-index:40!important;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:14px;max-width:calc(100% - 32px);z-index:20}
+.pdvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;padding-block:16px}
+.pdvgrid a{background:var(--carta);border:1px solid var(--linea);border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--ink);display:grid;gap:4px}
+.pdvgrid a b{font-size:17px}
+.pdvgrid a span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.intro{font-size:14px;color:var(--muted);max-width:65ch;padding-top:14px;margin:0}
+.maintabs{display:flex;background:var(--blu);padding-top:2px}
+.maintabs button{appearance:none;border:0;background:transparent;color:var(--blu-ink);opacity:.75;font:700 15px var(--f-ui);padding:10px 14px;border-radius:10px 10px 0 0;cursor:pointer}
+.maintabs button[aria-selected="true"]{background:var(--bg);color:var(--ink);opacity:1}
+.cal-wrap{padding-block:14px;display:grid;gap:16px}
+.cal-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.cal-head h2,.domande h2{margin:0;font-size:17px}
+.legenda{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--muted)}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.pal{width:12px;height:12px;border-radius:3px;display:inline-block}
+.pal.o{background:var(--ordine)} .pal.s{background:var(--scarico)}
+.cal{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:760px){.cal{grid-template-columns:repeat(7,minmax(0,1fr))}}
+@media (max-width:759px){.cal{gap:6px}.giorno{min-height:0;padding:6px 10px;grid-template-columns:auto 1fr;align-items:center;column-gap:12px}.giorno .gt{gap:8px;justify-content:flex-start}.giorno .chip{grid-column:1/-1}}
+.giorno{background:var(--carta);border:1px solid var(--linea);border-radius:10px;padding:8px;display:grid;gap:6px;align-content:start;min-height:64px}
+.giorno.oggi{border:2px solid var(--oggi)}
+.giorno .gt{display:flex;justify-content:space-between;align-items:baseline;font-weight:800}
+.giorno .gt small{font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+.vuoto{font-size:12px;color:var(--muted)}
+.chip{display:block;width:100%;text-align:left;border:0;border-radius:7px;padding:6px 8px;font:600 12.5px var(--f-ui);cursor:pointer;line-height:1.25;color:var(--chip-ink)}
+.chip.s{background:var(--scarico)}
+.chip.o{background:var(--ordine)}
+.chip small{display:block;font-weight:400;opacity:.9}
+.domande{background:var(--carta);border:1px solid var(--linea);border-radius:12px;padding:14px;display:grid;gap:16px}
+.dom{display:grid;gap:8px}
+.dom .q{font-weight:700;display:flex;gap:8px;align-items:baseline}
+.dom .q .num{background:var(--blu);color:var(--blu-ink);border-radius:50%;width:22px;height:22px;display:inline-grid;place-items:center;font-size:12px;flex:0 0 auto}
+.dom.off{opacity:.45;pointer-events:none}
+.scelte{display:flex;flex-wrap:wrap;gap:6px}
+.scelte button{appearance:none;border:1px solid var(--linea);background:var(--bg);color:var(--ink);border-radius:9px;padding:8px 12px;font:600 14px var(--f-ui);cursor:pointer;text-align:left}
+.scelte button small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.scelte button[aria-pressed="true"]{background:var(--blu);color:var(--blu-ink);border-color:var(--blu)}
+.scelte button[aria-pressed="true"] small{color:var(--blu-ink)}
+.fornlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px;max-height:260px;overflow:auto;padding:2px}
+.fornlist button{appearance:none;text-align:left;border:1px solid var(--linea);background:var(--bg);color:var(--ink);border-radius:9px;padding:8px 10px;font:600 14px var(--f-ui);cursor:pointer;display:grid;gap:2px}
+.fornlist button small{font-weight:400;font-size:12px;color:var(--muted)}
+.fornlist .tag{font-size:11px;font-weight:700;color:var(--scarico)}
+.fornlist .tag.o{color:var(--ordine)}
+.fornlist button.abituale{border-color:var(--scarico);background:var(--scarico-bg)}
+input.gr{position:absolute;opacity:0;pointer-events:none}
+.tabs{display:flex;gap:4px;padding-block:6px;background:var(--fascia);position:sticky;top:env(safe-area-inset-top,0px);z-index:4;overflow-x:auto;border-bottom:1px solid var(--linea)}
+.tabs label{flex:0 0 auto;padding:7px 11px;border-radius:8px;background:var(--carta);font-weight:700;font-size:14px;cursor:pointer;border:1px solid var(--linea)}
+#gALL:checked~.tabs label[for=gALL],#g0:checked~.tabs label[for=g0],#g1:checked~.tabs label[for=g1],#g2:checked~.tabs label[for=g2],#g3:checked~.tabs label[for=g3],#g4:checked~.tabs label[for=g4],#g5:checked~.tabs label[for=g5]{background:var(--blu);color:var(--blu-ink);border-color:var(--blu)}
+main.lista{padding-block:10px}
+.filtri{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.filtri input[type=search]{flex:1 1 220px}
+.filtri select{flex:1 1 160px}
+.focus{background:var(--scarico-bg);border:1px solid var(--scarico);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.focus .t{flex:1 1 240px}
+.leg{font-size:13px;color:var(--muted);margin:2px 0 10px;max-width:75ch}
+.strum{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.indice{columns:2 220px;font-size:13px;background:var(--carta);border:1px solid var(--linea);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.indice a{display:block;color:var(--ink);text-decoration:none;padding:3px 0;break-inside:avoid}
+.indice b{display:block;column-span:all;margin-bottom:6px}
+details.forn{background:var(--carta);border:1px solid var(--linea);border-radius:10px;margin-bottom:10px;overflow:hidden}
+details.forn>summary{list-style:none;cursor:pointer;padding:10px 12px;background:var(--fascia);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+details.forn>summary::-webkit-details-marker{display:none}
+summary .nome{font-weight:800;font-size:15px;flex:1 1 200px;min-width:0}
+summary .tel{font-size:14px;user-select:text;overflow-wrap:anywhere;min-width:0}
+summary .tel a{color:inherit;font-weight:600}
+summary .note{font-size:12px;color:var(--muted);flex-basis:100%}
+summary .n{font-size:12px;background:var(--carta);border-radius:10px;padding:1px 8px;font-variant-numeric:tabular-nums}
+summary .cnt{font-size:12px;font-weight:800;color:var(--evid-bordo)}
+.azioni{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--linea);align-items:center}
+.azioni .btn{font-size:13px;padding:6px 10px}
+.azioni .sel{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 6px}
+.azioni .sel input{width:20px;height:20px;accent-color:var(--blu)}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font:13px var(--f-tab)}
+th,td{border:1px solid var(--linea);padding:4px 5px;vertical-align:middle}
+thead th{background:var(--blu);color:var(--blu-ink);font:600 11px var(--f-ui);letter-spacing:.03em}
+th.r{background:var(--reso-head)}
+td.cod{white-space:nowrap;font-variant-numeric:tabular-nums}
+td.descr{min-width:170px}
+td.descr .meta{display:none!important}
+/* colonne: codice, PLU, descrizione, classe, venduto medio (il reparto e' gia' scelto) */
+td.rep,th.rep{display:none}
+td.plu{white-space:nowrap;font-variant-numeric:tabular-nums}
+td.plu.ean{font-size:11px}
+td.cf{font-size:11px;white-space:nowrap}
+.cfm{display:none}
+td.rep,td.cl{font-size:11px;color:var(--muted)}
+td.rep b{color:var(--ink)}
+td.ms{text-align:right;font-variant-numeric:tabular-nums}
+td.q{padding:2px;width:52px;text-align:center}
+td.q.r{background:var(--reso)}
+td.q input{width:48px;padding:5px 2px;font:16px var(--f-ui);text-align:center;border:1px solid var(--linea);border-radius:6px;background:var(--carta);color:var(--ink)}
+td.q input:not(:placeholder-shown){background:var(--evid);font-weight:700;border-color:var(--evid-bordo)}
+.gc{display:none}
+#g0:checked~main .d0,#g1:checked~main .d1,#g2:checked~main .d2,#g3:checked~main .d3,#g4:checked~main .d4,#g5:checked~main .d5,#gALL:checked~main .gc{display:table-cell}
+@media (max-width:820px){
+  /* telefono: colonne in proporzione alla larghezza dello schermo, da Codice a RESO tutto visibile; costo e pz/collo a destra scorrendo */
+  details.forn table{table-layout:fixed;width:113vw;min-width:0}
+  details.forn th.cod{width:14vw} details.forn th.plu{width:13vw} details.forn th.descr{width:23vw}
+  details.forn th.cl{width:12vw} details.forn th.ms{width:8vw} details.forn thead tr:first-child th.gc{width:20vw}
+  details.forn th.costo{width:12vw} details.forn th.collo{width:11vw}
+  details.forn td,details.forn th{overflow:hidden;overflow-wrap:anywhere;word-break:break-word}
+  details.forn td.cod{white-space:normal;font-size:10px;line-height:1.15}
+  details.forn .cfm{font-size:8px;word-break:break-all}
+  details.forn td.plu{white-space:normal;word-break:break-all;font-size:9px;line-height:1.15}
+  details.forn td.descr{min-width:0;font-size:11px;line-height:1.2}
+  details.forn td.cl{min-width:0;font-size:9px;line-height:1.15}
+  details.forn td.ms{font-size:10px}
+  details.forn td.q{width:auto;padding:2px 1px}
+  details.forn td.q input{width:100%;min-width:0;padding:6px 0;font-size:15px}
+  details.forn td.collo input{width:100%;min-width:0}
+  details.forn thead th{font-size:9px;padding:2px 1px}
+  .barOrdine{padding:6px 8px;gap:6px}
+  .barOrdine .t{font-size:12px;flex-basis:100%}
+  .barOrdine .btn{padding:5px 8px;font-size:12px}
+  table{font-size:11.5px}
+  th,td{padding:3px 2px}
+  thead th{font-size:10px;letter-spacing:0}
+  td.cod,td.plu{font-size:10.5px}
+  th.cf,td.cf{display:none}
+  .cfm{display:block;font-size:9px;color:var(--muted)}
+  td.plu.ean{font-size:9px;white-space:normal;word-break:break-all;max-width:52px}
+  td.descr{min-width:92px}
+  td.cl{font-size:9.5px;min-width:52px;overflow-wrap:anywhere}
+  td.ms{font-size:11px}
+  td.q{width:42px}
+  td.q input{width:40px;padding:7px 1px;font-size:15px}
+}
+.nores,.caric{padding:24px;text-align:center;color:var(--muted)}
+.copiabox{background:var(--carta);border:1px solid var(--linea);border-radius:10px;padding:10px;margin:8px 0;display:grid;gap:6px}
+.copiabox textarea{width:100%;min-height:140px;font:13px var(--f-tab);background:var(--bg);color:var(--ink);border:1px solid var(--linea);border-radius:6px}
+summary .tel small{font-size:12px;color:var(--muted);white-space:normal}
+.infoform{border-top:1px solid var(--linea);padding:10px 12px;display:grid;gap:10px;background:var(--bg)}
+.infoform .campi{display:flex;flex-wrap:wrap;gap:8px}
+.infoform label.c{display:grid;gap:4px;font-size:13px;font-weight:600;flex:1 1 220px}
+.infoform input[type=tel],.infoform input[type=email]{padding:8px;border-radius:8px;border:1px solid var(--linea);font:inherit;background:var(--carta);color:var(--ink)}
+.infoform .gg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.infoform .gg b{min-width:64px}
+.infoform .gg label{display:inline-flex;align-items:center;gap:4px;background:var(--carta);border:1px solid var(--linea);border-radius:8px;padding:5px 8px;cursor:pointer}
+.infoform .gg input{width:18px;height:18px;accent-color:var(--blu)}
+.infoform .bott{display:flex;flex-wrap:wrap;gap:6px}
+/* modo ordine: tabulati del giorno aperti sotto le domande, senza istruzioni/strumenti/indice */
+#slotOrdine{display:grid;gap:0;min-width:0}
+.cal-wrap>*,#vistaEl,main.lista,details.forn{min-width:0;max-width:100%}
+.barOrdine{background:var(--blu);color:var(--blu-ink);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.barOrdine .t{flex:1 1 220px;font-size:14px}
+.barOrdine .btn{border-color:transparent}
+body.modo-ordine #vistaEl .tabs,body.modo-ordine #vistaEl .filtri,body.modo-ordine #vistaEl .leg,body.modo-ordine #vistaEl .leg-box,body.modo-ordine #vistaEl .strum,body.modo-ordine #vistaEl .indice,body.modo-ordine #focus,body.modo-ordine #copia{display:none!important}
+body.modo-ordine main.lista{padding-left:0;padding-right:0}
+body:not(.modo-ordine) .barOrdine{display:none}
+.indice{display:none}
+body.mostra-indice:not(.modo-ordine) .indice{display:block}
+details.leg-box{margin:2px 0 10px}
+details.leg-box summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
+td.costo{text-align:right;font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
+td.collo{padding:2px;text-align:center;width:48px}
+td.collo input{width:44px;padding:5px 2px;font:15px var(--f-ui);text-align:center;border:1px dashed var(--linea);border-radius:6px;background:var(--carta);color:var(--ink)}
+td.collo input:not(:placeholder-shown){border-style:solid;font-weight:700}
+tr.tot td{font-weight:700;background:var(--fascia);font-size:12px}
+tr.tot td.vo,tr.tot td.vr{white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
+/* scheda Tabulato */
+.selettori{background:var(--carta);border:1px solid var(--linea);border-radius:12px;padding:10px 12px;display:grid;gap:10px}
+.selettori .riga2{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.selettori .lab{font-size:13px;font-weight:700;color:var(--muted);min-width:70px}
+.selettori details summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--scarico)}
+.selettori details[open] summary{margin-bottom:8px}
+.scbadge{display:inline-block;background:var(--scarico);color:var(--chip-ink);font-weight:800;font-size:13px;border-radius:8px;padding:4px 10px;letter-spacing:.02em}
+.scbadge small{font-weight:600;opacity:.9}
+summary .scnote{font-size:12px;color:var(--muted)}
+body.modo-ordine #vistaEl .gc{display:none!important}
+body.modo-ordine #vistaEl details.sc0 .d0,body.modo-ordine #vistaEl details.sc1 .d1,body.modo-ordine #vistaEl details.sc2 .d2,body.modo-ordine #vistaEl details.sc3 .d3,body.modo-ordine #vistaEl details.sc4 .d4,body.modo-ordine #vistaEl details.sc5 .d5{display:table-cell!important}
+/* colori reparto */
+.scelte button[data-wr="PLS"]{background:var(--pls-bg);border-color:var(--pls)}
+.scelte button[data-wr="GASTRONOMIA"]{background:var(--gas-bg);border-color:var(--gas)}
+.scelte button[data-wr="PANE"]{background:var(--pane-bg);border-color:var(--pane)}
+.scelte button[data-wr="PLS"][aria-pressed="true"]{background:var(--pls);color:var(--chip-ink)}
+.scelte button[data-wr="GASTRONOMIA"][aria-pressed="true"]{background:var(--gas);color:var(--rep-ink)}
+.scelte button[data-wr="PANE"][aria-pressed="true"]{background:var(--pane);color:var(--chip-ink)}
+tr.art[data-rep="PLS"] td.cod{box-shadow:inset 6px 0 0 var(--pls);background:var(--pls-bg)}
+tr.art[data-rep="GASTRONOMIA"] td.cod{box-shadow:inset 6px 0 0 var(--gas);background:var(--gas-bg)}
+tr.art[data-rep="PANE"] td.cod{box-shadow:inset 6px 0 0 var(--pane);background:var(--pane-bg)}
+tr.art td.cod{padding-left:9px}
+details.forn[data-mrep="PLS"]>summary{background:var(--pls-bg);box-shadow:inset 8px 0 0 var(--pls)}
+details.forn[data-mrep="GASTRONOMIA"]>summary{background:var(--gas-bg);box-shadow:inset 8px 0 0 var(--gas)}
+details.forn[data-mrep="PANE"]>summary{background:var(--pane-bg);box-shadow:inset 8px 0 0 var(--pane)}
+details.forn[data-mrep]>summary{padding-left:18px}
+.legrep{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.legrep span{display:inline-flex;align-items:center;gap:5px}
+.legrep i{width:12px;height:12px;border-radius:3px;display:inline-block}
+/* cambio giorno di scarico */
+.scbadge{cursor:pointer;border:0;font-family:var(--f-ui)}
+.scbadge::after{content:" ✎";font-weight:400}
+.scpick{border-top:1px solid var(--linea);padding:10px 12px;background:var(--scarico-bg);display:grid;gap:8px}
+.scpick .t{font-size:13px;font-weight:700}
+.scpick .giorni{display:flex;flex-wrap:wrap;gap:6px}
+.scpick .giorni button{appearance:none;border:1px solid var(--scarico);background:var(--carta);color:var(--ink);border-radius:8px;padding:7px 10px;font:700 14px var(--f-ui);cursor:pointer}
+.scpick .giorni button small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.scpick .giorni button[aria-pressed="true"]{background:var(--scarico);color:var(--chip-ink)}
+.scpick label{font-size:13px;display:inline-flex;gap:6px;align-items:center}
+.scpick input[type=checkbox]{width:18px;height:18px;accent-color:var(--scarico)}
+/* scheda Elenco fornitori: tabella per reparto */
+.anag-wrap{padding-block:14px;display:grid;gap:14px}
+.anag-sez{background:var(--carta);border:1px solid var(--linea);border-radius:10px;overflow:hidden}
+.anag-sez h2{margin:0;padding:8px 12px;font-size:16px}
+.anag-sez.gas h2{background:var(--gas-bg);box-shadow:inset 8px 0 0 var(--gas);padding-left:18px}
+.anag-sez.pane h2{background:var(--pane-bg);box-shadow:inset 8px 0 0 var(--pane);padding-left:18px}
+.anag-sez.pls h2{background:var(--pls-bg);box-shadow:inset 8px 0 0 var(--pls);padding-left:18px}
+.anag-sez h2 small{font-weight:400;font-size:12px;color:var(--muted)}
+table.anag{border-collapse:collapse;width:100%;font:13px var(--f-ui)}
+table.anag th,table.anag td{border:1px solid var(--linea);padding:4px 5px;text-align:center;vertical-align:middle}
+table.anag th{background:var(--fascia);font-size:11px}
+table.anag td.nome{text-align:left;font-weight:700;min-width:140px}
+table.anag td.nome small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+table.anag td.tel input{width:130px;padding:6px;border:1px solid var(--linea);border-radius:6px;font:14px var(--f-ui);background:var(--carta);color:var(--ink)}
+table.anag td.gg{padding:2px;width:30px}
+table.anag td.gg input{width:20px;height:20px;accent-color:var(--blu);cursor:pointer}
+table.anag td.gg.o{background:var(--ordine-bg)} table.anag td.gg.o input{accent-color:var(--ordine)}
+table.anag td.gg.s{background:var(--scarico-bg)} table.anag td.gg.s input{accent-color:var(--scarico)}
+table.anag th.o{background:var(--ordine);color:var(--chip-ink)} table.anag th.s{background:var(--scarico);color:var(--chip-ink)}
+table.anag td.sep,table.anag th.sep{border-left:3px solid var(--ink)}
+/* pasticceria: tendina dei gusti sotto l'articolo, una riga per gusto scelto */
+select.gusti{display:block;width:100%;margin-top:4px;padding:5px 4px;font-size:13px;border:1px solid var(--pane);border-radius:6px;background:var(--pane-bg);color:var(--ink)}
+.turni{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+tr.gusto td{background:var(--pane-bg)}
+tr.gusto td.cod,tr.gusto td.cf,tr.gusto td.plu{color:var(--muted);font-size:10px}
+tr.gusto td.descr{padding-left:14px;font-size:12px}
+tr.gusto td.descr b{font-weight:700}
+button.xg{border:0;background:none;color:#9b1c1c;font-size:15px;padding:0 4px;cursor:pointer;float:right}
+tr.art.listino td.descr,tr.art.listino td.cl,tr.art.listino td.cod,tr.art.listino td.plu{color:var(--muted);font-style:italic}
+.tag-na{display:inline-block;margin-top:2px;font-size:10px;font-style:normal;font-weight:700;color:#fff;background:#C00000;border-radius:6px;padding:0 6px}
+.tag-list{display:inline-block;margin-top:2px;font-size:10px;font-style:normal;font-weight:700;color:var(--evid-bordo);background:var(--evid);border-radius:6px;padding:0 6px}
+.mailrow input{flex:1 1 220px;padding:7px 9px;border-radius:8px;border:1px solid var(--linea);font:14px var(--f-ui);background:var(--carta);color:var(--ink);min-width:0}
+#mailAlt{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--carta);border-top:3px solid var(--blu);padding:12px max(16px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;box-shadow:0 -4px 16px rgba(0,0,0,.2)}
+#mailAlt .riga{display:flex;flex-wrap:wrap;gap:6px}
+#mailAlt small{color:var(--muted)}
+#mailAlt textarea{width:100%;height:150px;font:13px var(--f-tab);background:var(--bg);color:var(--ink);border:1px solid var(--linea);border-radius:6px;padding:6px}
+#mailAlt{max-height:85vh;overflow:auto}
+footer{font-size:12px;color:var(--muted);padding-block:16px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+details.forn table{width:100%!important}
+</style>
+
+<header class="top"><div class="in gutter">
+  <h1 id="titolo">Tabulato fornitori locali</h1>
+  <div class="sub" id="sub">Ordini e resi settimanali dei fornitori locali, per punto vendita.</div>
+  <div class="riga" id="barra" hidden>
+    <label class="dal">Settimana dal <input type="date" id="dal"></label>
+    <a class="btn" href="#" id="cambiaPdv">Cambia PDV</a>
+  </div>
+</div>
+<nav class="maintabs gutter" id="maintabs" role="tablist" hidden>
+  <button type="button" role="tab" id="tabTab" aria-selected="true">Tabulato</button>
+  <button type="button" role="tab" id="tabCal" aria-selected="false">Calendario</button>
+  <button type="button" role="tab" id="tabEl" aria-selected="false">Elenco fornitori</button>
+</nav>
+</header>
+
+<section id="vistaPdv" class="gutter">
+  <p class="intro">Scegli il punto vendita. Ogni elenco contiene i fornitori locali da cui quel negozio ha comprato negli ultimi 90 giorni, con codice, PLU, reparto, classe e vendita media settimanale. Le quantità che scrivi restano salvate su questo dispositivo.</p>
+  <div class="pdvgrid" id="pdvgrid"><div class="caric">Caricamento punti vendita…</div></div>
+</section>
+
+<div id="vistaLista" hidden>
+  <section id="vistaTab" class="cal-wrap gutter">
+    <div class="selettori">
+      <div class="riga2"><span class="lab">Ordini di</span><div class="scelte" id="sceltaGiorno"></div></div>
+      <div class="riga2"><span class="lab">Reparto</span><div class="scelte" id="sceltaRep"></div></div>
+      <div class="legrep"><span><i style="background:var(--gas)"></i>Gastronomia</span><span><i style="background:var(--pane)"></i>Pane</span><span><i style="background:var(--pls)"></i>PLS</span></div>
+      <div class="riga2 mailrow"><span class="lab">Invia da</span><span id="mittTxt" style="font-size:13px;overflow-wrap:anywhere"></span></div>
+      <div class="riga2 mailrow"><span class="lab">Invia a</span><input type="email" id="mailOrd" placeholder="indirizzo Gmail a cui mandare gli ordini" aria-label="Mail a cui mandare gli ordini"></div>
+      <details id="dom3"><summary>+ Aggiungi un fornitore a questo giorno</summary>
+        <input type="search" id="cercaForn" placeholder="Cerca fornitore" aria-label="Cerca fornitore">
+        <div class="fornlist" id="sceltaForn" style="margin-top:8px"></div>
+      </details>
+    </div>
+    <div id="slotOrdine"></div>
+  </section>
+
+  <section id="vistaAnag" class="anag-wrap gutter" hidden>
+    <div class="leg" style="margin:0">Scrivi i giorni di ordine e i giorni di scarico: si salvano subito su questo dispositivo. Valgono per il Tabulato (quali fornitori si ordinano quel giorno e quando scaricano). <button class="btn" type="button" data-az="esporta" style="margin-left:6px">Copia per CONTATTI FORNITORI.xlsx</button></div>
+    <div id="copiaAnag"></div>
+    <div id="anag"></div>
+  </section>
+
+  <section id="vistaCal" class="cal-wrap gutter" hidden>
+    <div class="cal-head">
+      <h2 id="calTitolo">Settimana</h2>
+      <div class="legenda"><span><i class="pal o"></i>Giorno in cui hai fatto l'ordine</span><span><i class="pal s"></i>Giorno in cui il fornitore scarica</span></div>
+    </div>
+    <div class="cal" id="cal"></div>
+  </section>
+
+  <div id="vistaEl" hidden>
+    <input type="checkbox" id="g0" class="gr"><input type="checkbox" id="g1" class="gr"><input type="checkbox" id="g2" class="gr">
+    <input type="checkbox" id="g3" class="gr"><input type="checkbox" id="g4" class="gr"><input type="checkbox" id="g5" class="gr">
+    <input type="checkbox" id="gALL" class="gr">
+    <nav class="tabs gutter" aria-label="Giorno">
+      <label for="g0">LUN</label><label for="g1">MAR</label><label for="g2">MER</label><label for="g3">GIO</label><label for="g4">VEN</label><label for="g5">SAB</label><label for="gALL">Tutti</label>
+    </nav>
+    <div class="leg gutter noprint" style="margin:2px 0 6px;font-size:12px">Puoi selezionare più giorni insieme: tocca i giorni che ti servono, oppure "Tutti".</div>
+    <main class="lista gutter">
+      <div class="barOrdine" id="barOrdine">
+        <div class="t" id="barOrdineTxt"></div>
+        <a class="btn" href="#" data-az="mail-ordini">✉ Invia con Gmail</a>
+        <button class="btn" type="button" data-az="pdf-ordini">PDF ordini del giorno</button>
+        <button class="btn" type="button" data-az="altri">Aggiungi fornitore</button>
+      </div>
+      <div class="focus" id="focus" hidden>
+        <div class="t" id="focusTxt"></div>
+        <button class="btn" type="button" data-az="torna">Torna al calendario</button>
+        <button class="btn" type="button" data-az="tuttiforn">Mostra tutti i fornitori</button>
+      </div>
+      <div class="filtri">
+        <input type="search" id="cerca" placeholder="Cerca fornitore, articolo, codice, PLU" aria-label="Cerca">
+        <select id="fRep" aria-label="Reparto"><option value="">Tutti i reparti</option></select>
+        <select id="fCl" aria-label="Classe"><option value="">Tutte le classi</option></select>
+      </div>
+      <details class="leg-box"><summary>Come si usa</summary>      <div class="leg">Scrivi le quantità in <b>ORD</b> (ordine) e <b>RESO</b> nella colonna del giorno di scarico. <b>✉ Invia per mail</b> apre la posta con l'ordine già scritto. <b>PDF ordine del giorno</b> fa il PDF di quel solo fornitore. <b>PDF ordini del giorno</b> mette insieme i fornitori spuntati con "Includi", oppure tutti quelli con ordini quel giorno. Con "Tutti" si prende l'intera settimana. <b>Giorni</b> permette di scrivere i giorni di ordine e di scarico del fornitore: restano su questo dispositivo. Con <b>Copia contatti modificati</b> li incolli nel file CONTATTI FORNITORI.xlsx e valgono per tutti al prossimo aggiornamento. <b>Vend. sett.</b> = media venduta a settimana negli ultimi 90 giorni. <b>Più giorni insieme</b>: in "Ordini di" tocca tutti i giorni che ti servono (ritocca un giorno per toglierlo) oppure <b>Tutti</b> per la settimana intera (con Tutti compaiono anche i fornitori senza giorni d'ordine, segnati "GIORNI DA DEFINIRE": scrivi i loro giorni in Elenco fornitori); ogni fornitore mostra le colonne dei suoi giorni di scarico. <b>Pasticceria a gusti</b> (Di Tommaso, Pietrantonio, La Bocconotteria, LDA): sotto l'articolo c'è la tendina <b>+ gusto</b>. Scegli il gusto: si apre una riga solo per quel gusto, dove scrivi ORD e RESO. Ripeti per ogni gusto che ti serve; la <b>×</b> toglie la riga. Nell'ordine, nella mail e nel PDF ogni gusto esce su una riga sua (articolo · gusto). Sotto il nome trovi anche i giorni di ordine e di scarico di quell'articolo.</div></details>
+      <div class="strum">
+        <button class="btn" type="button" data-az="pdf-ordini">PDF ordini del giorno</button>
+        
+        <button class="btn" type="button" data-az="indice">Indice fornitori</button>
+        <button class="btn" type="button" data-az="apri">Apri tutti</button>
+        <button class="btn" type="button" data-az="chiudi">Chiudi tutti</button>
+        <button class="btn" type="button" data-az="esporta">Copia contatti modificati</button>
+        <button class="btn rosso" type="button" data-az="svuota">Svuota quantità della settimana</button>
+      </div>
+      <div id="copia" hidden></div>
+      <div id="contenuto"></div>
+      <div id="nores" class="nores" hidden>Nessun risultato</div>
+    </main>
+  </div>
+</div>
+<footer class="gutter">Fonte: acquisti e vendite Tecnologica, anagrafica articoli, elenco PLU bilance, vecchio tabulato fornitori (giorni di consegna). Reparto e classe dal codice articolo con la trascodifica reparti. "Di solito scarica" = giorni delle bolle degli ultimi 90 giorni in questo PDV.</footer>
+<div class="toast" id="toast" hidden></div>
+<div id="mailAlt" hidden>
+  <b>La mail non si è aperta?</b>
+  <small>Se Gmail non si è aperto, copia il testo qui sotto (tasto <b>Copia</b>, oppure tieni premuto sul testo → Seleziona tutto → Copia), poi apri Gmail e incolla. Aprendo il file con Chrome, Gmail si apre da solo.</small>
+  <div style="font-size:13px">A: <b id="mailA"></b><br>Oggetto: <b id="mailO"></b></div>
+  <textarea id="mailTxt" readonly></textarea>
+  <div class="riga">
+    <button class="btn verde" type="button" data-az="mailCopia">Copia</button>
+    <button class="btn" type="button" data-az="mailShare" id="btnMailShare">Condividi (Gmail, posta…)</button>
+    <a class="btn" href="#" id="btnMailto">Altra app di posta</a>
+    <button class="btn" type="button" data-az="mailChiudi">Chiudi</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+var GG=['LUN','MAR','MER','GIO','VEN','SAB'], GG7=['LUN','MAR','MER','GIO','VEN','SAB','DOM'];
+var $=function(id){return document.getElementById(id)};
+var INLINE=window.PDV_INLINE||null;
+var ELENCO=null, PDV=null, st={q:{},fatti:{}}, KEY='', focusId=null, CLS={};
+var W={g:null,rep:null}, ORD=null;
+var dlP=(window.claude&&window.claude.use)?window.claude.use('downloads').catch(function(){return null}):Promise.resolve(null);
+
+function toast(t){var x=$('toast');x.textContent=t;x.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(function(){x.hidden=true},3500)}
+function load(k){try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+function iso(d){var m=d.getMonth()+1,g=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(g<10?'0':'')+g}
+function lunedi(){var d=new Date(); if(d.getDay()===0) d.setDate(d.getDate()+1); else d.setDate(d.getDate()-(d.getDay()+6)%7); return iso(d)}
+function giornoDefault(){var x=new Date().getDay(); return x===0?0:Math.min(x-1,5)}   /* domenica = LUN della settimana nuova */
+function SW(){var k=$('dal').value||lunedi(); st.sett=st.sett||{}; return st.sett[k]=st.sett[k]||{q:{},fatti:{}}}   /* dati della settimana mostrata */
+/* righe gusto: chiave input = codice~indice gusto|giorno|o/r */
+function rigaGusto(sel,k){
+  var tr=sel.closest('tr.art'), key=tr.dataset.c+'~'+k, root=tr.closest('details.forn')||$('contenuto');
+  var ex=root.querySelector('tr.gusto[data-k="'+key+'"]'); if(ex) return ex;
+  var o=sel.querySelector('option[value="'+k+'"]'); if(!o) return null;
+  var n=tr.cloneNode(true); n.classList.add('gusto'); n.classList.remove('compilata'); n.dataset.k=key; n.dataset.d=tr.dataset.d+' · '+o.dataset.g;
+  n.querySelector('td.descr').innerHTML='<button type="button" class="xg" data-az="xg" title="Togli questo gusto">×</button>↳ <b>'+esc(o.dataset.g)+'</b>';
+  n.querySelectorAll('td.q input').forEach(function(i){var p=i.name.split('|'); i.name=key+'|'+p[1]+'|'+p[2]; i.value=''});
+  var cl=n.querySelector('td.collo'); if(cl) cl.innerHTML='';
+  var dopo=tr; while(dopo.nextElementSibling&&dopo.nextElementSibling.classList.contains('gusto')&&dopo.nextElementSibling.dataset.k.split('~')[0]===tr.dataset.c) dopo=dopo.nextElementSibling;
+  dopo.after(n); return n;
+}
+function sincGusti(root,q){
+  root.querySelectorAll('tr.gusto').forEach(function(x){x.remove()});
+  Object.keys(q).forEach(function(k){var a=k.split('|')[0]; if(a.indexOf('~')<0) return; var p=a.split('~');
+    var sel=root.querySelector('select.gusti[data-c="'+p[0]+'"]'); if(sel) rigaGusto(sel,p[1])});
+}
+document.addEventListener('change',function(e){
+  if(!e.target.matches('select.gusti')) return; var v=e.target.value; e.target.value=''; if(v==='') return;
+  var n=rigaGusto(e.target,v); if(!n) return; var d=n.closest('details.forn'), g=giornoDi(d);
+  var i=n.querySelector(g===null?'td.q input':'td.d'+g+' input'); if(i) i.focus();
+});
+function caricaSettimana(){var q=SW().q; sincGusti($('contenuto'),q); $('contenuto').querySelectorAll('td.q input').forEach(function(i){i.value=q[i.name]||''})}
+function dataGiorno(i){var p=($('dal').value||lunedi()).split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()+i);return d}
+function ddmm(d){return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)}
+function dalIt(){var v=$('dal').value;return v?v.split('-').reverse().join('/'):''}
+function oggiIdx(){return (new Date().getDay()+6)%7}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function forns(){return [].slice.call($('contenuto').querySelectorAll('details.forn'))}
+function nomeForn(d){return d.querySelector('summary .nome').textContent}
+
+/* ---------- avvio ---------- */
+if(INLINE){
+  ELENCO={pdv:[INLINE],periodo:INLINE.periodo,generato:INLINE.generato};
+  $('sub').textContent='Dati acquisti e vendite '+INLINE.periodo+' · aggiornato '+INLINE.generato;
+  $('cambiaPdv').hidden=true;
+  apriPdv(INLINE,null);
+}else{
+  fetch('pdv/elenco.json').then(function(r){return r.json()}).then(function(j){
+    ELENCO=j;
+    $('pdvgrid').innerHTML=j.pdv.map(function(p){return '<a href="#'+p.slug+'"><b>'+p.nome+'</b><span>'+p.forn+' fornitori · '+p.art+' articoli</span></a>'}).join('');
+    $('sub').textContent='Dati acquisti e vendite '+j.periodo+' · aggiornato '+j.generato;
+    route();
+  }).catch(function(){$('pdvgrid').innerHTML='<div class="caric">Elenco punti vendita non disponibile. Ricarica la pagina.</div>'});
+  window.addEventListener('hashchange',route);
+}
+function route(){
+  if(!ELENCO) return;
+  var h=location.hash.slice(1), p=ELENCO.pdv.find(function(x){return x.slug===h});
+  if(!p){PDV=null;$('vistaPdv').hidden=false;$('vistaLista').hidden=true;$('barra').hidden=true;$('maintabs').hidden=true;$('titolo').textContent='Tabulato fornitori locali';return}
+  if(PDV===p) return;
+  mostra(p);
+  $('contenuto').innerHTML='<div class="caric">Caricamento di '+p.forn+' fornitori…</div>';
+  $('cal').innerHTML='<div class="caric">Caricamento…</div>';
+  fetch('pdv/'+p.slug+'.html').then(function(r){return r.text()}).then(function(html){if(PDV===p) apriPdv(p,html)})
+    .catch(function(){$('contenuto').innerHTML='<div class="caric">Non riesco a caricare questo punto vendita. Ricarica la pagina.</div>'});
+}
+function mostra(p){
+  PDV=p; $('vistaPdv').hidden=true; $('vistaLista').hidden=false; $('barra').hidden=false; $('maintabs').hidden=false;
+  $('titolo').textContent='Tabulato fornitori locali · '+p.nome;
+}
+function apriPdv(p,html){
+  mostra(p);
+  if(html!==null) $('contenuto').innerHTML=html;
+  var c=$('contenuto');
+  c.querySelectorAll('.noprint').forEach(function(x){x.classList.remove('noprint')});
+  c.querySelectorAll('[data-az="stampa-forn"]').forEach(function(b){b.textContent='PDF ordine del giorno'});
+  c.querySelectorAll('[data-az="copia"]').forEach(function(b){b.textContent='Copia ordine'});
+  c.querySelectorAll('[data-az="wa"]').forEach(function(b){b.target='_blank';b.rel='noopener'});
+  KEY='tabforn_'+p.slug; st=load(KEY); st.sett=st.sett||{};
+  if(st.q){var lc=new Date(); lc.setDate(lc.getDate()-(lc.getDay()+6)%7); st.sett[iso(lc)]={q:st.q,fatti:st.fatti||{}}; delete st.q; delete st.fatti; save()}   /* dati vecchi -> settimana corrente */
+  $('dal').value=lunedi();
+  caricaSettimana();
+  st.collo=st.collo||{}; c.querySelectorAll('td.collo input').forEach(function(i){var k=i.name.split('|')[0];if(st.collo[k]) i.value=st.collo[k]});
+  setGiorno(giornoDefault());
+  $('mailOrd').value=st.mailOrd||(INLINE&&INLINE.mail)||(ELENCO&&ELENCO.mail)||'';
+  $('mittTxt').textContent=p.mitt||'account Gmail aperto su questo dispositivo';
+  c.querySelectorAll('[data-az="copia"]').forEach(function(b){if(b.parentNode.querySelector('[data-az="mail"]')) return; var m=document.createElement('a');m.className='btn verde';m.href='#';m.dataset.az='mail';m.textContent='✉ Invia con Gmail';b.parentNode.insertBefore(m,b.parentNode.firstChild)});
+  st.info=st.info||{}; forns().forEach(renderInfo); forns().forEach(valori);
+  forns().forEach(function(d){var c={};d.querySelectorAll('tr.art').forEach(function(tr){c[tr.dataset.rep]=(c[tr.dataset.rep]||0)+1});
+    var m=Object.keys(c).sort(function(a,b){return c[b]-c[a]})[0]; if(m) d.dataset.mrep=m;});
+  initFiltri(); segna(); W={g:giornoDefault(),rep:st.rep||'*'}; $('cercaForn').value=''; disegnaDomande(); scheda('tab');
+}
+function cambiaSettimana(nuova){
+  $('dal').value=nuova; caricaSettimana(); segna(); forns().forEach(valori); disegnaDomande(); disegnaCal();
+  if(ORD) apriOrdini();
+}
+document.addEventListener('visibilitychange',function(){if(document.hidden) setTimeout(function(){$('mailAlt').hidden=true},300)});
+$('mailOrd').addEventListener('change',function(){st.mailOrd=$('mailOrd').value.trim();save();toast('Mail ordini salvata su questo dispositivo.')});
+$('dal').addEventListener('change',function(){var v=$('dal').value; if(!v) return; var p=v.split('-'), d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()-(d.getDay()+6)%7); cambiaSettimana(iso(d))});
+
+/* ---------- contatti e giorni del fornitore ---------- */
+function lista(t){return (t||'').split(',').filter(String).map(Number)}
+function info(d){var o=st.info&&st.info[d.dataset.id];
+  return o?o:{tel:d.dataset.tel||'',mail:d.dataset.mail||'',go:lista(d.dataset.go),gsc:lista(d.dataset.gsc)}}
+function waNum(t){var x=(t||'').replace(/\D/g,'');if(x.length<8) return '';return (x.indexOf('39')===0&&x.length>10)?x:'39'+x}
+function renderInfo(d){
+  var i=info(d), el=d.querySelector('summary .tel'); if(!el) return;
+  var h='';
+  if(i.mail) h+=' ✉️ '+esc(i.mail);
+  var g=[]; if(i.go.length) g.push('Ordine: '+i.go.map(function(x){return GG[x]}).join(', ')); g.push('Scarico: '+(i.gsc.length?i.gsc.map(function(x){return GG[x]}).join(', '):'stesso giorno dell\'ordine'));
+  if(g.length) h+='<small>'+g.join('   ')+'</small>';
+  el.innerHTML=h; d.dataset.wa=waNum(i.tel);
+
+}
+function apriInfo(d){
+  var f=d.querySelector('.infoform'); if(f){f.remove();return}
+  var i=info(d), box=function(nome,sel){return '<div class="gg"><b>'+nome+'</b>'+GG.map(function(g,k){return '<label><input type="checkbox" data-k="'+k+'"'+(sel.indexOf(k)>=0?' checked':'')+'>'+g+'</label>'}).join('')+'</div>'};
+  f=document.createElement('div'); f.className='infoform';
+  f.innerHTML='<div class="campi"><label class="c" hidden>Telefono<input type="tel" class="iTel" value="'+esc(i.tel)+'" placeholder="es. 333 1234567"></label>'
+    +'<label class="c" hidden>Email<input type="email" class="iMail" value="'+esc(i.mail)+'" placeholder="ordini@fornitore.it"></label></div>'
+    +'<div class="iGo">'+box('Ordine',i.go)+'</div><div class="iSc">'+box('Scarico',i.gsc)+'</div>'
+    +'<div class="bott"><button class="btn verde" type="button" data-az="infoSalva">Salva</button><button class="btn" type="button" data-az="infoChiudi">Annulla</button>'
+    +(st.info&&st.info[d.dataset.id]?'<button class="btn rosso" type="button" data-az="infoReset">Torna ai dati del file</button>':'')+'</div>';
+  d.querySelector('.azioni').after(f); d.open=true; f.querySelector('.iTel').focus();
+}
+function salvaInfo(d){
+  var f=d.querySelector('.infoform'), sel=function(c){return [].slice.call(f.querySelectorAll(c+' input:checked')).map(function(x){return +x.dataset.k})};
+  st.info=st.info||{}; st.info[d.dataset.id]={nome:nomeForn(d),tel:f.querySelector('.iTel').value.trim(),mail:f.querySelector('.iMail').value.trim(),go:sel('.iGo'),gsc:sel('.iSc')};
+  save(); f.remove(); renderInfo(d); disegnaForn(); toast('Dati di '+nomeForn(d)+' salvati su questo dispositivo.');
+}
+function esporta(){
+  var ids=Object.keys(st.info||{}); if(!ids.length){toast('Nessun contatto modificato su questo dispositivo.');return null}
+  var gt=function(l){return l.map(function(x){return GG[x]}).join(', ')};
+  return ['CODICE FORNITORE\tFORNITORE\tTELEFONO\tEMAIL\tGIORNI ORDINE\tGIORNI SCARICO'].concat(ids.map(function(id){var i=st.info[id];
+    return [id,i.nome||'',i.tel,i.mail,gt(i.go),gt(i.gsc)].join('\t')})).join('\n');
+}
+
+/* ---------- schede: Tabulato / Calendario / Elenco fornitori ---------- */
+var anagCambiata=false;
+function scheda(n){
+  $('tabTab').setAttribute('aria-selected',String(n==='tab'));$('tabCal').setAttribute('aria-selected',String(n==='cal'));$('tabEl').setAttribute('aria-selected',String(n==='el'));
+  $('vistaTab').hidden=n!=='tab'; $('vistaCal').hidden=n!=='cal'; $('vistaAnag').hidden=n!=='el';
+  if(n==='tab'&&(!ORD||anagCambiata)){anagCambiata=false; apriOrdini()}
+  $('vistaEl').hidden=!(n==='tab'&&ORD);
+  if(n==='cal') disegnaCal();
+  if(n==='el') disegnaAnag();
+  window.scrollTo(0,0);
+}
+/* Elenco fornitori: una tabella per reparto (GASTRONOMIA, PANE, PLS) con telefono, giorni ordine e scarico */
+function disegnaAnag(){
+  var ordine=['GASTRONOMIA','PANE','PLS'], cls={GASTRONOMIA:'gas',PANE:'pane',PLS:'pls'}, reps={};
+  $('contenuto').querySelectorAll('tr.art').forEach(function(tr){reps[tr.dataset.rep]=1});
+  var lista=Object.keys(reps).sort(function(a,b){return (ordine.indexOf(a)+99*(ordine.indexOf(a)<0))-(ordine.indexOf(b)+99*(ordine.indexOf(b)<0))});
+  var gh=GG.map(function(g,k){return '<th class="o'+(k===0?' sep':'')+'">'+g.charAt(0)+'</th>'}).join('')+GG.map(function(g,k){return '<th class="s'+(k===0?' sep':'')+'">'+g.charAt(0)+'</th>'}).join('');
+  $('anag').innerHTML=lista.map(function(r){
+    var fs=forns().filter(function(d){return nRep(d,r)>0}).sort(function(a,b){return nomeForn(a).localeCompare(nomeForn(b))});
+    return '<div class="anag-sez '+(cls[r]||'')+'"><h2>'+esc(r)+' <small>'+fs.length+' fornitori</small></h2><div class="wrap"><table class="anag"><thead>'
+      +'<tr><th rowspan="2">Fornitore</th><th colspan="6" class="o sep">Giorni ordine</th><th colspan="6" class="s sep">Giorni scarico</th></tr><tr>'+gh+'</tr></thead><tbody>'
+      +fs.map(function(d){var i=info(d), id=esc(d.dataset.id);
+        return '<tr data-id="'+id+'"><td class="nome">'+esc(nomeForn(d))+'<small>'+nRep(d,r)+' articoli</small></td>'
+          +'<td class="tel" hidden><input type="tel" class="aTel" value="'+esc(i.tel)+'" placeholder="telefono" aria-label="telefono '+esc(nomeForn(d))+'"></td>'
+          +GG.map(function(g,k){return '<td class="gg o'+(k===0?' sep':'')+'"><input type="checkbox" class="aGo" data-k="'+k+'"'+(i.go.indexOf(k)>=0?' checked':'')+' aria-label="ordine '+g+'"></td>'}).join('')
+          +GG.map(function(g,k){return '<td class="gg s'+(k===0?' sep':'')+'"><input type="checkbox" class="aSc" data-k="'+k+'"'+(i.gsc.indexOf(k)>=0?' checked':'')+' aria-label="scarico '+g+'"></td>'}).join('')+'</tr>'}).join('')
+      +'</tbody></table></div></div>';
+  }).join('');
+}
+function salvaAnag(tr){
+  var id=tr.dataset.id, d=forns().find(function(x){return x.dataset.id===id}); if(!d) return;
+  var i=info(d), sel=function(c){return [].slice.call(tr.querySelectorAll('input.'+c+':checked')).map(function(x){return +x.dataset.k})};
+  st.info=st.info||{}; st.info[id]={nome:nomeForn(d),tel:tr.querySelector('.aTel').value.trim(),mail:i.mail,go:sel('aGo'),gsc:sel('aSc')};
+  save(); renderInfo(d); anagCambiata=true;
+  /* stesso fornitore in altri reparti: allinea le altre righe */
+  $('anag').querySelectorAll('tr[data-id="'+id.replace(/"/g,'\\"')+'"]').forEach(function(t){if(t===tr) return;
+    t.querySelector('.aTel').value=st.info[id].tel;
+    t.querySelectorAll('input.aGo').forEach(function(c){c.checked=st.info[id].go.indexOf(+c.dataset.k)>=0});
+    t.querySelectorAll('input.aSc').forEach(function(c){c.checked=st.info[id].gsc.indexOf(+c.dataset.k)>=0})});
+  toast('Salvato: '+nomeForn(d));
+}
+document.addEventListener('change',function(e){var tr=e.target.closest('#anag tr[data-id]'); if(tr) salvaAnag(tr)});
+$('tabTab').addEventListener('click',function(){scheda('tab')});
+$('tabCal').addEventListener('click',function(){scheda('cal')});
+$('tabEl').addEventListener('click',function(){scheda('el')});
+
+/* ---------- stato ordini ---------- */
+function segna(){
+  forns().forEach(function(d){
+    var n=0; d.querySelectorAll('tr.art').forEach(function(tr){var c=false;tr.querySelectorAll('td.q input').forEach(function(i){if(i.value.trim()) c=true});tr.classList.toggle('compilata',c);if(c) n++});
+    d.classList.toggle('compilato',n>0);
+    var s=d.querySelector('.cnt'); if(s) s.textContent=n?n+' compilati':'';
+  });
+}
+function righeGiorno(d,g){var n=0;d.querySelectorAll('tr.art').forEach(function(tr){var c=false;tr.querySelectorAll(g===null?'td.q input':'td.d'+g+' input').forEach(function(i){if(i.value.trim()) c=true});if(c) n++});return n}
+function haGiorno(d,g){return righeGiorno(d,g)>0}
+function numIt(v){var x=parseFloat(String(v||'').replace(',','.'));return isNaN(x)?0:x}
+function colloDi(tr){var i=tr.querySelector('td.collo input');var x=i?numIt(i.value):0;return x>0?x:1}
+function euro(x){return x?'€ '+x.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}):''}
+function valori(d){
+  d.querySelectorAll('tfoot td.vo,tfoot td.vr').forEach(function(td){
+    var g=td.dataset.g, tipo=td.classList.contains('vo')?'o':'r', tot=0;
+    d.querySelectorAll('tr.art').forEach(function(tr){var i=tr.querySelector('input[name="'+(tr.dataset.k||tr.dataset.c)+'|'+g+'|'+tipo+'"]');
+      if(i&&i.value.trim()) tot+=numIt(i.value)*colloDi(tr)*(+tr.dataset.costo||0)});
+    td.textContent=euro(Math.round(tot*100)/100);
+  });
+}
+document.addEventListener('input',function(e){
+  if(e.target.matches('td.collo input')){var c=e.target.name.split('|')[0], v=e.target.value.trim().replace('.',',');
+    st.collo=st.collo||{}; if(v) st.collo[c]=v; else delete st.collo[c]; save(); valori(e.target.closest('details.forn')); return}
+  if(!e.target.matches('td.q input')) return;
+  var v=e.target.value.trim().replace('.',',');
+  var sw=storeDi(e.target.closest('details.forn')); if(v) sw.q[e.target.name]=v; else delete sw.q[e.target.name];
+  var d=e.target.closest('details.forn'), g=+e.target.name.split('|')[1], k=d.dataset.id+'|'+g;
+  if(haGiorno(d,g)){if(!sw.fatti[k]) sw.fatti[k]=iso(new Date())} else delete sw.fatti[k];
+  save(); segna(); valori(d);
+});
+
+/* ---------- calendario: rosso = giorno dell'ordine, blu = giorno di scarico (stesso giorno = blu) ---------- */
+function disegnaCal(){
+  if(!PDV) return;
+  var celle=GG7.map(function(){return {s:[],o:[]}});
+  var dal=dataGiorno(0), al=dataGiorno(6);
+  forns().forEach(function(d){
+    if(d.dataset.wk==='1') return;   /* questo fornitore mostra gli ordini della settimana dopo */
+    for(var g=0;g<6;g++){
+      var n=righeGiorno(d,g); if(!n) continue;
+      var f=SW().fatti[d.dataset.id+'|'+g], prox=false;
+      if(f){var p=f.split('-'), fd=new Date(+p[0],+p[1]-1,+p[2]);
+        if(fd>=dal&&fd<=al){var gi=(fd.getDay()+6)%7; prox=gi>g; if(gi!==g) celle[gi].o.push({d:d,g:g,n:n,prox:prox})}}
+      if(!prox) celle[g].s.push({d:d,g:g,n:n});   /* scarico della settimana dopo: non va nel blu di questa settimana */
+    }
+  });
+  /* ordini fatti questa settimana per scarichi della settimana dopo (anticipati): in rosso */
+  var nx=dataGiorno(7), fz=(st.sett||{})[iso(nx)];
+  if(fz&&fz.fatti){Object.keys(fz.fatti).forEach(function(k){var pp=k.split('|'), d=forns().find(function(x){return x.dataset.id===pp[0]}); if(!d) return;
+    var q=fz.fatti[k].split('-'), fd=new Date(+q[0],+q[1]-1,+q[2]); if(fd<dal||fd>al) return;
+    celle[(fd.getDay()+6)%7].o.push({d:d,g:+pp[1],n:0,prox:true})})}
+  $('calTitolo').textContent='Settimana dal '+ddmm(dal)+' al '+ddmm(dataGiorno(6));
+  var oggi=iso(new Date());
+  $('cal').innerHTML=celle.map(function(c,i){
+    var dt=dataGiorno(i), h='<div class="giorno'+(iso(dt)===oggi?' oggi':'')+'"><div class="gt">'+GG7[i]+' <small>'+ddmm(dt)+'</small></div>';
+    c.o.forEach(function(x){h+='<button type="button" class="chip o" data-apri="'+esc(x.d.dataset.id)+'" data-g="'+x.g+'">'+esc(nomeForn(x.d))+'<small>ordine per '+GG[x.g]+' '+ddmm(dataGiorno(x.prox?x.g+7:x.g))+'</small></button>'});
+    c.s.forEach(function(x){h+='<button type="button" class="chip s" data-apri="'+esc(x.d.dataset.id)+'" data-g="'+x.g+'">'+esc(nomeForn(x.d))+'<small>scarica · '+x.n+(x.n===1?' riga':' righe')+'</small></button>'});
+    if(!c.s.length&&!c.o.length) h+='<div class="vuoto">Nessun ordine</div>';
+    return h+'</div>';
+  }).join('');
+}
+
+/* ---------- scheda Tabulato: ordini del giorno ---------- */
+function disegnaDomande(){
+  if(!PDV) return;
+  var oggi=oggiIdx();
+  var sel=W.gs&&W.gs.length?W.gs:[W.g];
+  $('sceltaGiorno').innerHTML=GG.map(function(g,i){return '<button type="button" data-wg="'+i+'" aria-pressed="'+(sel.indexOf(i)>=0)+'">'+g+'<small>'+ddmm(dataGiorno(i))+(i===oggi?' · oggi':'')+'</small></button>'}).join('')
+    +'<button type="button" data-wg="all" aria-pressed="'+(sel.length===6)+'">Tutti<small>la settimana</small></button>';
+  var reps={}; $('contenuto').querySelectorAll('tr.art').forEach(function(tr){reps[tr.dataset.rep]=1});
+  $('sceltaRep').innerHTML=['*'].concat(Object.keys(reps).sort()).map(function(r){
+    return '<button type="button" data-wr="'+esc(r)+'" aria-pressed="'+(W.rep===r)+'">'+(r==='*'?'Tutti':esc(r))+'</button>'}).join('');
+  disegnaForn();
+}
+/* giorno di scarico per un ordine fatto il giorno g: primo giorno di scarico da g in avanti; senza indicazione = stesso giorno */
+function scDi(d,g){var l=info(d).gsc.slice().sort();if(!l.length) return g;for(var k=0;k<l.length;k++) if(l[k]>=g) return l[k];return l[0]}
+function nRep(d,rep){var n=0;d.querySelectorAll('tr.art:not(.gusto)').forEach(function(tr){if(rep==='*'||tr.dataset.rep===rep) n++});return n}
+function disegnaForn(){
+  if(W.g===null||W.rep===null){$('sceltaForn').innerHTML='';return}
+  var t=$('cercaForn').value.trim().toUpperCase(), el=[];
+  forns().forEach(function(d){
+    var n=nRep(d,W.rep);
+    if(!n||(t&&d.dataset.nome.indexOf(t)<0)) return;
+    if(ORD&&ORD.ids[d.dataset.id]) return;
+    el.push({d:d,n:n,sc:scDi(d,W.g),go:info(d).go});
+  });
+  el.sort(function(a,b){return nomeForn(a.d).localeCompare(nomeForn(b.d))});
+  $('sceltaForn').innerHTML=el.length?el.map(function(x){
+    return '<button type="button" data-wf="'+esc(x.d.dataset.id)+'">'+esc(nomeForn(x.d))
+      +'<small>'+x.n+' articoli'+(x.go.length?' · ordine di solito '+x.go.map(function(g){return GG[g]}).join(', '):'')+'</small>'
+      +'<span class="tag">Scarico '+GG[x.sc]+' '+ddmm(dataGiorno(x.sc<W.g?x.sc+7:x.sc))+'</span></button>'}).join('')
+    :'<div class="vuoto">Tutti i fornitori di questo reparto sono già aperti qui sotto.</div>';
+}
+$('cercaForn').addEventListener('input',disegnaForn);
+function storeNext(){var k=iso(dataGiorno(7)); st.sett=st.sett||{}; return st.sett[k]=st.sett[k]||{q:{},fatti:{}}}
+function storeDi(d){return (d&&d.dataset.wk==='1')?storeNext():SW()}
+function dataSc(d,i){return dataGiorno((d&&d.dataset.wk==='1')?i+7:i)}
+function caricaForn(d){var q=storeDi(d).q; sincGusti(d,q); d.querySelectorAll('td.q input').forEach(function(i){i.value=q[i.name]||''}); valori(d)}
+function segnaScarico(d,sc,wk){
+  var prima=d.dataset.wk==='1'; d.dataset.wk=wk?'1':'';
+  if(prima!==!!wk) caricaForn(d);
+  d.dataset.sc=sc; for(var k=0;k<6;k++) d.classList.toggle('sc'+k,k===sc);
+  var sm=d.querySelector('summary'), b=sm.querySelector('.scbadge');
+  if(!b){b=document.createElement('button');b.type='button';b.className='scbadge';b.dataset.az='scPick';b.title='Cambia il giorno di scarico';sm.insertBefore(b,sm.querySelector('.tel'))}
+  var stesso=!info(d).gsc.length;
+  b.innerHTML='SCARICO '+GG[sc]+' '+ddmm(dataSc(d,sc))+(wk?' <small>(settimana prossima)</small>':(stesso?' <small>(stesso giorno)</small>':''));
+}
+function togliScarico(d){delete d.dataset.scs;var pk=d.querySelector('.scpick');if(pk) pk.remove();if(d.dataset.wk==='1'){d.dataset.wk='';caricaForn(d)}delete d.dataset.sc;for(var k=0;k<6;k++) d.classList.remove('sc'+k);var b=d.querySelector('summary .scbadge');if(b) b.remove()}
+function apriOrdini(){ if(W.gs&&W.gs.length>1) avviaOrdine(W.gs.slice(),W.rep); else avviaOrdine(W.g,W.rep) }
+function avviaOrdine(g,rep,forza){
+  var gg=Array.isArray(g)?g.slice().sort():null; if(gg&&gg.length===1){g=gg[0];gg=null}
+  ORD={g:gg?gg[0]:g,multi:gg,rep:rep,ids:{},prox:[]}; forza=forza||{};
+  forns().forEach(function(d){
+    var id=d.dataset.id; togliScarico(d); delete d.dataset.scs;
+    if(forza[id]!==undefined){ORD.ids[id]=1;segnaScarico(d,forza[id]);return}
+    if(!nRep(d,rep)) return;
+    if(gg){   /* piu' giorni: il fornitore entra se si ordina in almeno uno, con tutti i suoi giorni di scarico della settimana */
+      var scs=[];
+      gg.forEach(function(x){var sc=scDi(d,x);
+        if((info(d).go.indexOf(x)>=0||haGiorno(d,sc)&&SW().fatti[id+'|'+sc]===iso(dataGiorno(x)))&&sc>=x&&scs.indexOf(sc)<0) scs.push(sc)});
+      var daDef=false;
+      if(!scs.length&&gg.length===6&&!info(d).go.length){   /* "Tutti": entrano anche i fornitori senza giorni d'ordine (Paola 18/11/2026) */
+        scs=info(d).gsc.length?info(d).gsc.slice():[0,1,2,3,4,5]; daDef=true}
+      if(!scs.length) return;
+      scs.sort(); ORD.ids[id]=1; segnaScarico(d,scs[0]); d.dataset.scs=scs.join(',');
+      scs.forEach(function(k){d.classList.add('sc'+k)});
+      var b=d.querySelector('summary .scbadge'); if(b){b.innerHTML=daDef&&!info(d).gsc.length?'GIORNI DA DEFINIRE <small>(scrivili in Elenco fornitori)</small>':'SCARICO '+scs.map(function(k){return GG[k]+' '+ddmm(dataGiorno(k))}).join(', ');b.dataset.az=''}
+      return;
+    }
+    var sc=scDi(d,g);
+    if(info(d).go.indexOf(g)>=0||haGiorno(d,sc)&&SW().fatti[id+'|'+sc]===iso(dataGiorno(g))){
+      if(sc<g){ORD.prox.push({id:id,sc:sc,nome:nomeForn(d)});return}   /* scarica la settimana dopo: va nel tabulato nuovo */
+      ORD.ids[id]=1;segnaScarico(d,sc)}
+  });
+  $('slotOrdine').appendChild($('vistaEl')); document.body.classList.add('modo-ordine');
+  $('cerca').value=''; $('fRep').value=rep==='*'?'':rep; riempiClassi(); $('fCl').value='';
+  filtra(); forns().forEach(function(d){if(ORD.ids[d.dataset.id]) d.open=true});
+  testoBarra(); disegnaForn();
+  if(!$('vistaTab').hidden) $('vistaEl').hidden=false;
+}
+function testoBarra(){
+  if(!ORD) return; var n=Object.keys(ORD.ids).length;
+  $('barOrdineTxt').innerHTML='Ordini di <b>'+(ORD.multi?ORD.multi.map(function(k){return GG[k]+' '+ddmm(dataGiorno(k))}).join(', '):GG[ORD.g]+' '+ddmm(dataGiorno(ORD.g)))+'</b> · '+(ORD.rep==='*'?'tutti i reparti':'<b>'+esc(ORD.rep)+'</b>')+' · '+n+(n===1?' fornitore':' fornitori')
+    +(ORD.prox.length?'<div style="margin-top:6px;font-size:13px">Scaricano la settimana prossima: '+ORD.prox.map(function(x){return '<b>'+esc(x.nome)+'</b> ('+GG[x.sc]+' '+ddmm(dataGiorno(x.sc+7))+')'}).join(', ')
+      +'. Si caricano domenica nel tabulato nuovo. <button class="btn" type="button" data-az="prossima" style="margin-top:4px">Anticipa: ordina ora qui</button></div>':'');
+  $('nores').textContent=n?'Nessun risultato':'Nessun fornitore da ordinare il '+GG[ORD.g]+' per questo reparto. Usa "Aggiungi un fornitore a questo giorno".';
+}
+/* scelta del giorno di scarico per l'ordine di questo fornitore */
+function apriScPick(d){
+  var pk=d.querySelector('.scpick'); if(pk){pk.remove();return}
+  var sc=+d.dataset.sc;
+  pk=document.createElement('div'); pk.className='scpick';
+  pk.innerHTML='<div class="t">Giorno di scarico di questo ordine</div><div class="giorni">'+GG.map(function(g,k){var pr=k<ORD.g;
+      return '<button type="button" data-az="scSet" data-k="'+k+'" aria-pressed="'+(k===sc)+'">'+g+'<small>'+ddmm(dataGiorno(pr?k+7:k))+(pr?' · sett. pross.':'')+'</small></button>'}).join('')+'</div>'
+    +'<label><input type="checkbox" class="scSempre"> Usa sempre questo giorno di scarico per '+esc(nomeForn(d))+'</label>';
+  d.querySelector('summary').after(pk); d.open=true;
+}
+function cambiaScarico(d,k,sempre){
+  var id=d.dataset.id, old=+d.dataset.sc, sw=storeDi(d), oggi=iso(new Date()), sposta=[], wk=k<ORD.g;
+  if(sempre){var i=info(d); st.info=st.info||{}; st.info[id]={nome:nomeForn(d),tel:i.tel,mail:i.mail,go:i.go,gsc:[k]}; renderInfo(d)}
+  if(k===old&&wk===(d.dataset.wk==='1')){save();var p0=d.querySelector('.scpick');if(p0) p0.remove();return}
+  /* quantita' gia' scritte sul vecchio giorno: si spostano sul nuovo */
+  d.querySelectorAll('td.d'+old+' input').forEach(function(inp){var v=inp.value.trim(); if(!v) return; var pp=inp.name.split('|'); sposta.push([pp[0],pp[2],v]); inp.value=''; delete sw.q[inp.name]});
+  delete sw.fatti[id+'|'+old];
+  var dest=wk?storeNext():SW();
+  sposta.forEach(function(x){dest.q[x[0]+'|'+k+'|'+x[1]]=x[2]});
+  if(sposta.length) dest.fatti[id+'|'+k]=oggi;
+  save(); segnaScarico(d,k,wk); caricaForn(d);
+  var p1=d.querySelector('.scpick'); if(p1) p1.remove(); segna(); valori(d); d.open=true;
+  toast('Scarico di '+nomeForn(d)+': '+GG[k]+' '+ddmm(dataSc(d,k))+(wk?' (settimana prossima)':'')+'. Puoi scrivere l\'ordine.');
+}
+function apriProssima(lista){
+  var p=$('dal').value.split('-'), d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+7);
+  var fz={}; lista.forEach(function(x){fz[x.id]=x.sc});
+  W.g=Math.min.apply(null,lista.map(function(x){return x.sc}));
+  $('dal').value=iso(d); caricaSettimana(); segna(); forns().forEach(valori); disegnaDomande();
+  avviaOrdine(W.g,W.rep,fz); scheda('tab');
+  toast('Tabulato della settimana dal '+ddmm(d)+': ordine anticipato.');
+}
+function aggiungiForn(id){
+  if(!ORD) return; var d=forns().find(function(x){return x.dataset.id===id}); if(!d) return;
+  var scx=scDi(d,ORD.g);
+  ORD.ids[id]=1; segnaScarico(d,scx,scx<ORD.g); $('cercaForn').value=''; $('dom3').open=false; filtra(); testoBarra(); disegnaForn();
+  d.open=true; setTimeout(function(){var b=$('barOrdine').offsetHeight||0; window.scrollTo({top:d.getBoundingClientRect().top+window.scrollY-b-12})},30);
+}
+function chiudiOrdine(){
+  ORD=null; document.body.classList.remove('modo-ordine'); forns().forEach(togliScarico);
+  $('vistaLista').appendChild($('vistaEl')); $('vistaEl').hidden=true;
+  $('nores').textContent='Nessun risultato'; $('fRep').value=''; riempiClassi(); $('fCl').value=''; setGiorno(giornoDefault()); filtra(); disegnaForn();
+}
+/* giorno su cui lavora un fornitore: nella scheda Tabulato il suo giorno di scarico, altrimenti il giorno scelto nell'elenco */
+function giornoDi(d){if(ORD&&ORD.multi&&d&&d.dataset.scs&&d.dataset.scs.indexOf(',')>0) return null;
+  return (ORD&&d&&d.dataset.sc!==undefined&&ORD.ids[d.dataset.id])?+d.dataset.sc:giornoScelto()}
+
+/* ---------- filtri elenco ---------- */
+function initFiltri(){
+  var reps={}; CLS={};
+  $('contenuto').querySelectorAll('tr.art').forEach(function(tr){var r=tr.dataset.rep,c=tr.dataset.cl;reps[r]=1;CLS[r]=CLS[r]||{};if(!CLS[r][c]) CLS[r][c]=tr.querySelector('td.cl').textContent.trim()});
+  $('fRep').innerHTML='<option value="">Tutti i reparti</option>'+Object.keys(reps).sort().map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>'}).join('');
+  riempiClassi(); focusId=null; ORD=null; document.body.classList.remove('modo-ordine'); $('vistaLista').appendChild($('vistaEl')); $('focus').hidden=true; $('cerca').value=''; filtra();
+}
+function riempiClassi(){
+  var m={}; Object.keys(CLS).forEach(function(r){if(!$('fRep').value||r===$('fRep').value) Object.keys(CLS[r]).forEach(function(c){m[c]=CLS[r][c]})});
+  $('fCl').innerHTML='<option value="">Tutte le classi</option>'+Object.keys(m).sort().map(function(c){return '<option value="'+esc(c)+'">'+esc(m[c])+'</option>'}).join('');
+}
+function filtra(){
+  var t=$('cerca').value.trim().toUpperCase(), r=$('fRep').value, c=$('fCl').value, vis=0, attivo=!!(t||r||c||ORD);
+  forns().forEach(function(d){
+    if(ORD&&!ORD.ids[d.dataset.id]){d.hidden=true;return}
+    var inF=!!t&&(d.dataset.nome||'').indexOf(t)>=0, any=false;
+    d.querySelectorAll('tr.art').forEach(function(tr){var ok=(!r||tr.dataset.rep===r)&&(!c||tr.dataset.cl===c)&&(!t||inF||tr.dataset.s.indexOf(t)>=0);tr.hidden=!ok;if(ok) any=true});
+    d.hidden=!any; if(any){vis++; if(t||r||c) d.open=true}
+    var n=d.querySelector('.n'); if(n){n.dataset.tot=n.dataset.tot||n.textContent; var k=d.querySelectorAll('tr.art:not(.gusto):not([hidden])').length, m=n.dataset.tot.match(/^\d+/);
+      n.textContent=(attivo&&m)?n.dataset.tot.replace(/^\d+/,k+' di '+m[0]):n.dataset.tot}
+  });
+  $('nores').hidden=vis>0;
+}
+$('cerca').addEventListener('input',filtra);
+$('fRep').addEventListener('change',function(){riempiClassi();filtra()});
+$('fCl').addEventListener('change',filtra);
+
+/* ---------- testo, PDF, download ---------- */
+function righe(d){
+  var out={o:{},r:{}};
+  d.querySelectorAll('tr.art').forEach(function(tr){tr.querySelectorAll('td.q input').forEach(function(i){var v=i.value.trim();if(!v) return;
+    var p=i.name.split('|'), g=+p[1]; (out[p[2]][g]=out[p[2]][g]||[]).push({q:v,d:tr.dataset.d,c:tr.dataset.c,k:tr.dataset.k||tr.dataset.c,plu:tr.dataset.plu,collo:colloDi(tr),costo:+tr.dataset.costo||0})})});
+  return out;
+}
+/* giorni selezionati nell'elenco: null = tutti */
+function giorniSel(){if($('gALL').checked) return null; var l=[];for(var i=0;i<6;i++) if($('g'+i).checked) l.push(i); return l.length?l:null}
+function giornoScelto(){var l=giorniSel();return (l&&l.length===1)?l[0]:null}
+function okG(gs,i,d){if(gs!==null) return i===gs; if(ORD&&ORD.multi&&d&&d.dataset.scs) return d.dataset.scs.split(',').indexOf(String(i))>=0; var l=giorniSel(); return !l||l.indexOf(i)>=0}
+function setGiorno(i){for(var k=0;k<6;k++) $('g'+k).checked=k===i; $('gALL').checked=false}
+document.addEventListener('change',function(e){
+  if(!e.target.matches||!e.target.matches('input.gr')) return;
+  if(e.target.id==='gALL'){ if(e.target.checked) for(var k=0;k<6;k++) $('g'+k).checked=false; }
+  else if(e.target.checked) $('gALL').checked=false;
+  if(!giorniSel()&&!$('gALL').checked){ $('gALL').checked=true; }
+  if(giorniSel()&&giorniSel().length===6){ for(var j=0;j<6;j++) $('g'+j).checked=false; $('gALL').checked=true; }
+});
+function testo(d){
+  var x=righe(d), gs=giornoDi(d), t='*ORDINE '+PDV.nome+'*\nFornitore: '+nomeForn(d), vuoto=true;
+  [['o','ORDINE'],['r','RESO']].forEach(function(k){GG.forEach(function(g,i){if(!okG(gs,i,d)) return;var l=x[k[0]][i];if(l){vuoto=false;
+    t+='\n\n*'+k[1]+' - scarico '+g+' '+ddmm(dataSc(d,i))+'*\n'+l.map(function(r){return r.q+' x '+r.d+' ('+r.c+(r.plu?(r.plu.length>=8?' EAN ':' PLU ')+r.plu:'')+')'}).join('\n')}})});
+  return vuoto?null:t+'\n\nGrazie';
+}
+function repartiOrdinati(ds){
+  var r={}; ds.forEach(function(d){var g=giornoDi(d);
+    d.querySelectorAll('tr.art').forEach(function(tr){var ok=false;tr.querySelectorAll(g===null?'td.q input':'td.d'+g+' input').forEach(function(i){if(i.value.trim()) ok=true}); if(ok) r[tr.dataset.rep]=1})});
+  var ord=['GASTRONOMIA','PANE','PLS']; return Object.keys(r).sort(function(a,b){return ord.indexOf(a)-ord.indexOf(b)}).join(' + ');
+}
+function oggettoMail(ds,forn){
+  var g=ORD?ORD.g:oggiIdx(), dt=dataGiorno(Math.min(g,6)), data=GG7[Math.min(g,6)]+' '+ddmm(dt)+'/'+dt.getFullYear();
+  return 'ORDINE '+(repartiOrdinati(ds)||'')+' DEL '+data+' - '+PDV.nome+(forn?' - '+forn:'');
+}
+var MAILULT=null;
+function urlMail(testoMail,oggetto){
+  var m=($('mailOrd').value||'').trim();
+  if(!m) return null;
+  var corpo=testoMail.replace(/\*/g,'');
+  MAILULT={a:m,o:oggetto,t:corpo,mailto:'mailto:'+m+'?subject='+encodeURIComponent(oggetto)+'&body='+encodeURIComponent(corpo)};
+  var mt=(PDV&&PDV.mitt)||'';   /* Gmail si apre dall'account del negozio, se e' collegato su questo dispositivo */
+  return 'https://mail.google.com/mail/'+(mt?'u/'+encodeURIComponent(mt)+'/':'')+'?view=cm&fs=1&to='+encodeURIComponent(m)+'&su='+encodeURIComponent(oggetto)+'&body='+encodeURIComponent(corpo);
+}
+function mostraAltMail(){ /* se dopo 2 secondi la pagina e' ancora qui, la mail probabilmente non si e' aperta */
+  setTimeout(function(){ if(document.hidden||!MAILULT) return;
+    $('mailA').textContent=MAILULT.a; $('mailO').textContent=MAILULT.o;
+    $('mailTxt').value='A: '+MAILULT.a+'\nOggetto: '+MAILULT.o+'\n\n'+MAILULT.t;
+    $('btnMailShare').hidden=!navigator.share; $('btnMailto').href=MAILULT.mailto;
+    $('mailAlt').hidden=false; },2000);
+}
+function copiaDaTextarea(t){ /* funziona anche dove non esistono gli appunti moderni */
+  t.focus(); t.select(); try{t.setSelectionRange(0,t.value.length)}catch(e){}
+  var ok=false; try{ok=document.execCommand('copy')}catch(e){}
+  if(ok){toast('Copiato: apri Gmail e incolla.');return}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t.value).then(function(){toast('Copiato: apri Gmail e incolla.')},function(){toast('Testo selezionato: tieni premuto e scegli Copia.')});return}
+  toast('Testo selezionato: tieni premuto e scegli Copia.');
+}
+function mostraCopia(t){
+  var b=$('vistaAnag').hidden?$('copia'):$('copiaAnag'); b.hidden=false; b.className='copiabox';
+  b.innerHTML='<b>Testo dell\'ordine</b><textarea readonly id="copiaTxt"></textarea><div><button class="btn" type="button" data-az="chiudiCopia">Chiudi</button></div>';
+  $('copiaTxt').value=t; $('copiaTxt').focus(); $('copiaTxt').select(); b.scrollIntoView({block:'center'});
+}
+function pdfDoc(){if(!window.jspdf){toast('Generatore PDF non caricato: chiudi e riapri la pagina.');return null}return new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'})}
+function sezionePdf(doc,d,y,gs){
+  var x=righe(d), body=[], tot=0, totr=0;
+  GG.forEach(function(g,i){ if(!okG(gs,i,d)) return;
+    var mappa={}; (x.o[i]||[]).forEach(function(a){(mappa[a.k]=mappa[a.k]||{a:a,o:'',r:''}).o=a.q}); (x.r[i]||[]).forEach(function(a){(mappa[a.k]=mappa[a.k]||{a:a,o:'',r:''}).r=a.q});
+    Object.keys(mappa).forEach(function(c){var m=mappa[c], vo=numIt(m.o)*m.a.collo*m.a.costo; tot+=vo; totr+=numIt(m.r)*m.a.collo*m.a.costo;
+      body.push([g+' '+ddmm(dataSc(d,i)),m.a.c,m.a.plu||'',m.a.d,m.o,m.r,m.a.collo===1?'':String(m.a.collo).replace('.',',')])});
+  });
+  if(!body.length) return y;
+  var tel=(d.querySelector('summary .tel')||{}).textContent||'';
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text(nomeForn(d),14,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text(tel.replace(new RegExp('[^\\x20-\\x7E\\xC0-\\xFF]','g'),'').trim(),14,y+5);
+  doc.autoTable({startY:y+8,head:[['Scarico','Codice','PLU','Descrizione','Ordine','Reso','Pz/collo']],body:body,styles:{fontSize:9,cellPadding:1.6},headStyles:{fillColor:[29,53,87]},
+    columnStyles:{4:{halign:'center',fontStyle:'bold'},5:{halign:'center'},6:{halign:'center'}},margin:{left:12,right:12}});
+  return doc.lastAutoTable.finalY+10;
+}
+function intestaPdf(doc,gs){
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('ORDINE '+PDV.nome+(gs!==null?' - scarico '+GG[gs]+' '+ddmm(dataGiorno(gs)):''),14,16);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text((dalIt()?'Settimana dal '+dalIt()+'   ':'')+'Generato il '+new Date().toLocaleDateString('it-IT'),14,21);
+  return 30;
+}
+function scarica(blob,nome,cosa){
+  try{var u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=nome;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(u)},60000);toast(cosa+' pronto: lo trovi nei download.')}
+  catch(e){try{window.open(URL.createObjectURL(blob),'_blank')}catch(e2){toast('Non riesco a salvare il PDF su questo telefono.')}}
+}
+function salva(nome,data,cosa){
+  dlP.then(function(dl){
+    if(dl) return dl.save({filename:nome,data:data}).then(function(){toast(cosa+' pronto.')},function(e){if(e&&e.code!=='declined') toast('Download non riuscito: '+(e.message||e.code))});
+    var blob=data instanceof Blob?data:new Blob([data],{type:'application/pdf'});
+    try{
+      var file=new File([blob],nome,{type:'application/pdf'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:nome}).then(function(){toast(cosa+' pronto.')},function(err){if(!err||err.name!=='AbortError') scarica(blob,nome,cosa)});
+        return;
+      }
+    }catch(e){}
+    scarica(blob,nome,cosa);
+  });
+}
+
+var svuotaArmato=false;
+document.addEventListener('click',function(e){
+  var w=e.target.closest('[data-wg],[data-wr],[data-wf],[data-apri]');
+  if(w){
+    if(w.dataset.wg!==undefined){   /* tocca piu' giorni per vederli insieme; "Tutti" = tutta la settimana */
+      var cur=W.gs&&W.gs.length?W.gs.slice():[W.g];
+      if(w.dataset.wg==='all') cur=cur.length===6?[giornoDefault()]:[0,1,2,3,4,5];
+      else{var k=+w.dataset.wg, ix=cur.indexOf(k); if(ix>=0){if(cur.length>1) cur.splice(ix,1)} else cur.push(k)}
+      cur.sort(); W.gs=cur; W.g=cur[0]; disegnaDomande(); apriOrdini(); return}
+    if(w.dataset.wr!==undefined){W.rep=w.dataset.wr;st.rep=W.rep;save();disegnaDomande();apriOrdini();return}
+    if(w.dataset.wf!==undefined){aggiungiForn(w.dataset.wf);return}
+    if(w.dataset.apri!==undefined){
+      var ga=+w.dataset.g, id=w.dataset.apri, f=SW().fatti[id+'|'+ga], go=ga;
+      if(f){var pp=f.split('-'), fd=new Date(+pp[0],+pp[1]-1,+pp[2]); if(fd>=dataGiorno(0)&&fd<=dataGiorno(6)) go=Math.min((fd.getDay()+6)%7,5)}
+      W.g=go; W.rep='*'; disegnaDomande(); var fz={}; fz[id]=ga; avviaOrdine(go,'*',fz); scheda('tab');
+      var da=forns().find(function(x){return x.dataset.id===id}); if(da) setTimeout(function(){var b=$('barOrdine').offsetHeight||0; window.scrollTo({top:da.getBoundingClientRect().top+window.scrollY-b-12})},30); return}
+  }
+  var b=e.target.closest('[data-az]'); if(!b) return;
+  var az=b.dataset.az, d=b.closest('details.forn');
+  if(az==='xg'){var tg=b.closest('tr.gusto'), sw3=storeDi(d); tg.querySelectorAll('td.q input').forEach(function(i){delete sw3.q[i.name]}); tg.remove(); save(); segna(); valori(d); return}
+  if(az==='mail'||az==='mail-ordini'){
+    var tm, og;
+    if(az==='mail'){tm=testo(d); og=tm&&oggettoMail([d],nomeForn(d))}
+    else{var dm=forns().filter(function(x){return (!ORD||ORD.ids[x.dataset.id])&&haGiorno(x,giornoDi(x))});
+      tm=dm.length?dm.map(testo).join(String.fromCharCode(10,10)+'------------------------------'+String.fromCharCode(10,10)):null; og=tm&&oggettoMail(dm,'')}
+    if(!tm){e.preventDefault();toast('Nessun ordine o reso da inviare.');return}
+    var u=urlMail(tm,og);
+    if(!u){e.preventDefault();toast('Scrivi prima la mail per gli ordini, in alto nella scheda Tabulato.');scheda('tab');$('mailOrd').focus();return}
+    b.target='_blank'; b.rel='noopener'; b.href=u; $('mailAlt').hidden=true; mostraAltMail(); return;   /* il collegamento apre Gmail "Scrivi" gia' compilato */
+  }
+  if(az==='wa'){var t=testo(d);if(!t){e.preventDefault();toast('Nessuna quantità per questo fornitore'+(giornoDi(d)!==null?' per lo scarico di '+GG[giornoDi(d)]:'')+'.');return}
+    var n=d.dataset.wa; b.href=(n?'https://wa.me/'+n:'https://wa.me/')+'?text='+encodeURIComponent(t); return}
+  e.preventDefault();
+  if(az==='info'){apriInfo(d)}
+  if(az==='infoSalva'){salvaInfo(d)}
+  if(az==='infoChiudi'){var ff=d.querySelector('.infoform');if(ff) ff.remove()}
+  if(az==='infoReset'){delete st.info[d.dataset.id];save();var f2=d.querySelector('.infoform');if(f2) f2.remove();renderInfo(d);disegnaForn();toast('Ripristinati i dati del file.')}
+  if(az==='esporta'){var tx=esporta();if(!tx) return;
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(tx).then(function(){toast('Copiato: incollalo in CONTATTI FORNITORI.xlsx dalla colonna A.')},function(){mostraCopia(tx)})} else mostraCopia(tx)}
+  if(az==='torna'){scheda('tab')}
+  if(az==='altri'){$('dom3').open=true;window.scrollTo(0,0);$('cercaForn').focus()}
+  if(az==='indice'){document.body.classList.toggle('mostra-indice')}
+  if(az==='mailChiudi'){$('mailAlt').hidden=true}
+  if(az==='mailShare'&&MAILULT){
+    if(navigator.share){navigator.share({title:MAILULT.o,text:'A: '+MAILULT.a+'\nOggetto: '+MAILULT.o+'\n\n'+MAILULT.t}).then(function(){$('mailAlt').hidden=true},function(){})}
+    else toast('Condivisione non disponibile qui: usa "Copia testo e indirizzo".')}
+  if(az==='mailCopia'){copiaDaTextarea($('mailTxt'))}
+  if(az==='scPick'&&ORD){apriScPick(d)}
+  if(az==='scSet'&&ORD){var pk2=d.querySelector('.scpick'); cambiaScarico(d,+b.dataset.k,!!(pk2&&pk2.querySelector('.scSempre').checked))}
+  if(az==='prossima'&&ORD&&ORD.prox.length){   /* anticipo: i fornitori restano in questa pagina, l'ordine va nel tabulato della settimana dopo */
+    ORD.prox.forEach(function(x){var dd=forns().find(function(f){return f.dataset.id===x.id}); if(dd){ORD.ids[x.id]=1; segnaScarico(dd,x.sc,true); dd.open=true}});
+    ORD.prox=[]; filtra(); testoBarra(); disegnaForn(); toast('Ordini anticipati: scrivi le quantità, vanno nella settimana prossima.')}
+  if(az==='tuttiforn'){focusId=null;$('focus').hidden=true;filtra()}
+  if(az==='copia'){var t2=testo(d);if(!t2){toast('Nessuna quantità per questo fornitore.');return}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t2).then(function(){toast('Ordine copiato. Incollalo dove vuoi.')},function(){mostraCopia(t2)})} else mostraCopia(t2)}
+  if(az==='chiudiCopia'){$('copia').hidden=true;$('copiaAnag').innerHTML=''}
+  if(az==='stampa-forn'){var gs=giornoDi(d);
+    if(!haGiorno(d,gs)){toast('Nessun ordine o reso'+(gs!==null?' per '+GG[gs]:'')+' per questo fornitore.');return}
+    var doc=pdfDoc(); if(!doc) return; sezionePdf(doc,d,intestaPdf(doc,gs),gs);
+    salva('ORDINE '+PDV.nome+(gs!==null?' '+GG[gs]:'')+' '+nomeForn(d).replace(/[^\w ]+/g,' ').trim()+'.pdf',doc.output('blob'),'PDF')}
+  if(az==='pdf-ordini'){var gs2=ORD?null:giornoScelto();
+    var sel=[].slice.call($('contenuto').querySelectorAll('input.selforn:checked')).map(function(c){return c.closest('details.forn')});
+    var base=sel.length?sel:forns().filter(function(x){return !ORD||ORD.ids[x.dataset.id]});
+    var ds=base.filter(function(x){return haGiorno(x,giornoDi(x))});
+    if(!ds.length){toast('Nessun ordine o reso da stampare.');return}
+    var doc2=pdfDoc(); if(!doc2) return; var y=intestaPdf(doc2,gs2);
+    if(ORD){doc2.setFontSize(10);doc2.text('Ordini fatti il '+GG[ORD.g]+' '+ddmm(dataGiorno(ORD.g)),14,26);y=34}
+    ds.forEach(function(x){if(y>250){doc2.addPage();y=16} y=sezionePdf(doc2,x,y,giornoDi(x))});
+    salva('ORDINI '+PDV.nome+(ORD?' '+GG[ORD.g]:(gs2!==null?' '+GG[gs2]:''))+(dalIt()?' '+dalIt().replace(/\//g,'-'):'')+'.pdf',doc2.output('blob'),'PDF')}
+  if(az==='pdf-tutto'){
+    if(INLINE){window.open(INLINE.pdf,'_blank');return}
+    toast('Preparo il PDF…');
+    fetch('pdf/'+PDV.slug+'.pdf').then(function(r){if(!r.ok) throw 0;return r.blob()}).then(function(bl){salva('TABULATO '+PDV.nome+'.pdf',bl,'PDF')}).catch(function(){toast('PDF non disponibile.')})}
+  if(az==='apri'){forns().forEach(function(x){if(!x.hidden) x.open=true})}
+  if(az==='chiudi'){forns().forEach(function(x){x.open=false})}
+  if(az==='svuota'){
+    if(!svuotaArmato){svuotaArmato=true;b.textContent='Tocca di nuovo per cancellare tutto';setTimeout(function(){svuotaArmato=false;b.textContent='Svuota quantità della settimana'},4000);return}
+    svuotaArmato=false;b.textContent='Svuota quantità della settimana';var sw2=SW();sw2.q={};sw2.fatti={};save();
+    sincGusti($('contenuto'),{});$('contenuto').querySelectorAll('td.q input').forEach(function(i){i.value=''});segna();forns().forEach(valori);toast('Quantità cancellate.')}
+});
+})();
+</script>
+
+</body></html>
